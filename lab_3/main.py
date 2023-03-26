@@ -3,8 +3,12 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QAction, qAp
     QColorDialog
 from PyQt5.QtGui import QPen, QBrush, QColor
 from PyQt5.QtCore import Qt, QObject
+import time
+from math import radians
 from dda import dda
+from vu import vu
 from bresenham import *
+from help_functions import spin_point
 
 DDA = 1
 BRESENHAM = 2
@@ -156,6 +160,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.library_button.clicked.connect(self.set_library)
 
         self.add_line_button.clicked.connect(lambda: self.choose_algorithm(self.used_algorithm))
+        self.add_spectrum_button.clicked.connect(lambda: self.draw_spectrum(self.used_algorithm))
 
         self.clear_button.clicked.connect(self.clear_scene)
         self.step_back.clicked.connect(self.reverse_last_action)
@@ -292,14 +297,59 @@ class MainWindow(Ui_MainWindow, QMainWindow):
                     points_list = integer_bresenham(x_start, x_end, y_start, y_end)
                 elif algorithm_index == STEP_BRESENHAM:
                     points_list = step_bresenham(x_start, x_end, y_start, y_end, self.draw_scene.line_color)
+                elif algorithm_index == VU:
+                    points_list = vu(x_start, x_end, y_start, y_end, self.draw_scene.line_color)
                 elif algorithm_index == LIBRARY:
                     self.draw_scene.addLine(x_start, y_start, x_end, y_end, QPen(self.draw_scene.line_color))
 
                 if algorithm_index != LIBRARY and is_drawn:
                     self.draw_line_by_algorithm(points_list)
 
+    def draw_spectrum(self, algorithm_index, coordinates=None, angle=None, is_drawn=True):
+        '''Построение спектра'''
+        if not algorithm_index:
+            self.create_message('Не выбран алгоритм построения')
+        else:
+            if not coordinates:
+                coordinates = self.get_coordinates()
 
+            if coordinates:
+                if not angle:
+                    angle = self.get_angle()
 
+                if angle:
+                    if is_drawn:
+                        count_items = len(self.draw_scene.items())
+
+                    total = 0
+                    time_start = 0
+                    time_end = 0
+
+                    for i in range(int(360 // angle)):
+                        time_start = time.time()
+                        self.choose_algorithm(algorithm_index, coordinates, is_drawn)
+                        time_end = time.time()
+                        coordinates[2], coordinates[3] = spin_point([coordinates[2], coordinates[3]], [coordinates[0],
+                                                                      coordinates[1]], radians(angle))
+
+                        total += time_end - time_start
+
+                    self.last_action = ['draw_spectrum', count_items]
+
+                    return total
+
+        return None
+
+    def get_angle(self):
+        '''Ввод угла поворота'''
+        result = None
+
+        try:
+            result = int(self.angle_line.text())
+        except:
+            self.create_message('Угол задается целым числом градусов')
+
+        return result
 
     def get_coordinates(self):
         '''Ввод координат отрезка'''
@@ -342,6 +392,10 @@ class MainWindow(Ui_MainWindow, QMainWindow):
             self.background_color_label.setStyleSheet("background-color: {}".format(self.last_action[1]))
         elif self.last_action[0] == 'use_algorithm':
             '''Отмена рисования линии'''
+            for i in range(len(self.draw_scene.items()) - self.last_action[1]):
+                self.draw_scene.removeItem((self.draw_scene.items())[0])
+        elif self.last_action[0] == 'draw_spectrum':
+            '''Отмена рисования спектра'''
             for i in range(len(self.draw_scene.items()) - self.last_action[1]):
                 self.draw_scene.removeItem((self.draw_scene.items())[0])
         elif self.last_action[0] == 'choose_algorithm':

@@ -178,7 +178,7 @@ def step_bresenham(x_start, x_end, y_start, y_end, color='black', step_mode=Fals
             if not step_mode:
                 point_list.append([x, y, correct_intensity(color, normal_round(error))])
 
-            if error < 0:
+            if error < w:
                 if change == 0:
                     x += sx
                 else:
