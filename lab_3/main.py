@@ -1,8 +1,8 @@
 from mainwindow import Ui_MainWindow
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QAction, qApp, QGraphicsScene, QTableWidgetItem, \
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QAction, qApp, QGraphicsScene, \
     QColorDialog
 from PyQt5.QtGui import QPen, QBrush, QColor
-from PyQt5.QtCore import Qt, QObject
+from PyQt5.QtCore import Qt
 import time
 from math import radians
 from dda import dda
@@ -10,6 +10,7 @@ from vu import vu
 from bresenham import *
 from help_functions import spin_point
 import matplotlib.pyplot as plt
+import numpy as np
 
 DDA = 1
 BRESENHAM = 2
@@ -167,6 +168,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.step_back.clicked.connect(self.reverse_last_action)
 
         self.time_compare_button.clicked.connect(self.time_characteristics)
+        self.step_compare_button.clicked.connect(self.step_characteristics)
 
         self.used_algorithm = None
         self.last_action = list()
@@ -181,25 +183,27 @@ class MainWindow(Ui_MainWindow, QMainWindow):
     def author_message(self):
         msg = QMessageBox()
         msg.setWindowTitle("Информация об авторе")
-        msg.setText("Лабораторную работу выполнил студент группы ИУ7-45Б Лебедев Владимир. Вариант 13.")
+        msg.setText("Лабораторную работу выполнил студент группы ИУ7-45Б Лебедев Владимир.")
         msg.exec()
 
     def lab_message(self):
         msg = QMessageBox()
         msg.setWindowTitle("Информация о программе")
-        msg.setText("Программа решает следующую задачу:\"Даны два множества точек на плоскости. Из первого множества "
-                    "выбрать три различные точки так, чтобы треугольник с вершинами в этих точках содержал "
-                    "(строго внутри себя) равное количество точек первого и второго множеств\"\n"
-                    "Задача решается с помощью оценки векторных произведений для трех точек треугольника и одной "
-                    "выбранной точки. Если все псевдоскалярные произведения отличны от нуля и одного знака, то "
-                    "выбранная точка лежит внутри треугольника.\nПользователю предоставляется возможность добавлять "
-                    "точки в множества (первое множество выделяется красным цветом, второе множество выделяется "
-                    "зеленым цветом). Возможно добавление путем ввода координат и нажатия соответсвующей кнопки или "
-                    "путем постановки точки кликом мыши на графической сцене (появляется точка, обведенная черным "
-                    "кругом) и нажатием соответсвующей кнопки. Если была нажата не кнопка добавления в какое-либо "
-                    "множество, то точка исчезнет с холста. Также пользователь может удалить или редактировать точки, "
-                    "введя их координаты или выделив строку с необходимой точкой в таблице точек - при этом координаты "
-                    "точки появятся в поле для ввода координат, а точка подсветится фиолетовым цветом.")
+        msg.setText("Программа строит растровые способы с помощью следующих алгоритмов:\n"
+                    "1) Цифровой дифференциальный анализатор\n"
+                    "2) Алгоритм Брезенхема с действительными коэффициентами\n"
+                    "3) Алгоритм Брезенхема с целыми коэффициентами\n"
+                    "4) Алгоритм Брезенхема с устранением ступенчатости\n"
+                    "5) Алгоритм Ву\n"
+                    "6) Средствами Qt\n"
+                    "Программа предоставляет возможность выбирать цвет отрезка, а также цвет фона.\n"
+                    "Ввод координат, угла и числа повторов замера времени построения осуществляется в соответствующие поля. "
+                    "Координаты могут задаваться целыми числами или вещественными числами с точкой (не запятой). "
+                    "Угол задается целым числом градусов, число повторов - целым положительным числом.\n"
+                    "Исследование времени построения происходит для конкретного введенного отрезка, суммарное время, "
+                    "затраченное на алгоритм, делится на число повторений.\n"
+                    "Исследование ступенчатости также происходит для конкретного введенного отрезка. "
+                    "Поворот производится на 90 градусов относительно текущего местоположения отрезка.")
         msg.exec()
 
     def set_line_color(self):
@@ -467,6 +471,82 @@ class MainWindow(Ui_MainWindow, QMainWindow):
                 plt.xticks(all_alg, tuple_labers)
                 plt.ylabel('Секунды')
                 plt.show()
+
+    def step_characteristics(self):
+        coordinates = self.get_coordinates()
+
+        if coordinates:
+            x_start, y_start, x_end, y_end = coordinates
+            step = 2
+            angle = 0
+            angles = list()
+            dda_steps = list()
+            bresenham_steps = list()
+            int_bresenham_steps = list()
+            smooth_bresenham_steps = list()
+            vu_steps = list()
+
+            for i in range(90 // step):
+                dda_steps.append(dda(x_start, x_end, y_start, y_end, step_mode=True))
+                bresenham_steps.append(bresenham_for_float(x_start, x_end, y_start, y_end, step_mode=True))
+                int_bresenham_steps.append(integer_bresenham(x_start, x_end, y_start, y_end, step_mode=True))
+                smooth_bresenham_steps.append(step_bresenham(x_start, x_end, y_start, y_end, color=self.draw_scene.line_color, step_mode=True))
+                vu_steps.append(vu(x_start, x_end, y_start, y_end, color=self.draw_scene.line_color, step_mode=True))
+                x_end, y_end = spin_point([x_end, y_end], [x_start, y_start], radians(step))
+
+                angles.append(angle)
+                angle += step
+
+            plt.figure("Характеристика ступенчатости алгоритмов построения.", figsize=(18, 10))
+
+            plt.subplot(2, 3, 1)
+            plt.title("ЦДА")
+            plt.plot(angles, dda_steps)
+            plt.xticks(np.arange(91, step=5))
+            plt.ylabel("Число ступенек")
+            plt.xlabel("Угол (в градусах)")
+
+            plt.subplot(2, 3, 2)
+            plt.title("Алгоритм Брензенхема с действительными коэффицентами")
+            plt.plot(angles, bresenham_steps)
+            plt.xticks(np.arange(91, step=5))
+            plt.ylabel("Число ступенек")
+            plt.xlabel("Угол (в градусах)")
+
+            plt.subplot(2, 3, 3)
+            plt.title("Алгоритм Брензенхема с целыми коэффицентами")
+            plt.plot(angles, int_bresenham_steps)
+            plt.xticks(np.arange(91, step=5))
+            plt.ylabel("Число ступенек")
+            plt.xlabel("Угол (в градусах)")
+
+            plt.subplot(2, 3, 4)
+            plt.title("Алгоритм Брензенхема с устранением ступенчатости")
+            plt.plot(angles, smooth_bresenham_steps)
+            plt.xticks(np.arange(91, step=5))
+            plt.ylabel("Число ступенек")
+            plt.xlabel("Угол (в градусах)")
+
+            plt.subplot(2, 3, 5)
+            plt.title("Алгоритм Ву")
+            plt.plot(angles, vu_steps)
+            plt.xticks(np.arange(91, step=5))
+            plt.ylabel("Число ступенек")
+            plt.xlabel("Угол (в градусах)")
+
+            plt.subplot(2, 3, 6)
+            plt.plot(angles, dda_steps, label="ЦДА")
+            plt.plot(angles, bresenham_steps, '-*', label="Брензенхем с \nдействительными коэффицентами")
+            plt.plot(angles, int_bresenham_steps, '-.', label="Брензенхем с целыми \n коэффицентами")
+            plt.plot(angles, smooth_bresenham_steps, '.', label="Брензенхем с\n устранением\nступенчатости")
+            plt.plot(angles, vu_steps, '--', label="By")
+            plt.title("Исследование ступенчатости.")
+            plt.xticks(np.arange(91, step=5))
+            plt.legend()
+            plt.ylabel("Число ступенек")
+            plt.xlabel("Угол (в градусах)")
+
+            plt.show()
 
 if __name__ == '__main__':
     """Запуск приложения"""
