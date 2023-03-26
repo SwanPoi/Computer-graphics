@@ -158,8 +158,10 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.add_line_button.clicked.connect(lambda: self.choose_algorithm(self.used_algorithm))
 
         self.clear_button.clicked.connect(self.clear_scene)
+        self.step_back.clicked.connect(self.reverse_last_action)
 
         self.used_algorithm = None
+        self.last_action = list()
 
     """Создание оповещения"""
     def create_message(self, text):
@@ -197,6 +199,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         color = QColorDialog.getColor()
 
         if color.isValid():
+            self.last_action = ['change_line_color', self.draw_scene.line_color.name()]
             self.line_color_label.setStyleSheet("background-color: {}".format(color.name()))
             self.draw_scene.change_line_color(color.name())
 
@@ -205,6 +208,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         color = QColorDialog.getColor()
 
         if color.isValid():
+            self.last_action = ['change_background_color', self.draw_scene.background_color.name()]
             self.background_color_label.setStyleSheet("background-color: {}".format(color.name()))
             self.draw_scene.change_background_color(color.name())
 
@@ -214,50 +218,54 @@ class MainWindow(Ui_MainWindow, QMainWindow):
             self.draw_scene.addRect(point[0], point[1], 1, 1,
                                   QPen(self.draw_scene.line_color if len(point) == 2 else point[2]))
 
-    def set_dda(self):
-        '''Выбор ЦДА'''
+    def clear_algorithm_buttons(self):
         for button in self.algorithm_buttons:
             button.setStyleSheet("background-color: white")
+
+    def set_dda(self):
+        '''Выбор ЦДА'''
+        self.clear_algorithm_buttons()
+        self.last_action = ['choose_algorithm', self.used_algorithm]
 
         self.used_algorithm = DDA
         self.dda_button.setStyleSheet("background-color: yellow")
 
     def set_bresenham(self):
         '''Выбор алгоритма Брезенхема'''
-        for button in self.algorithm_buttons:
-            button.setStyleSheet("background-color: white")
+        self.clear_algorithm_buttons()
+        self.last_action = ['choose_algorithm', self.used_algorithm]
 
         self.used_algorithm = BRESENHAM
         self.bresenham_button.setStyleSheet("background-color: yellow")
 
     def set_integer_bresenham(self):
         '''Выбор целочисленного алгоритма Брезенхема'''
-        for button in self.algorithm_buttons:
-            button.setStyleSheet("background-color: white")
+        self.clear_algorithm_buttons()
+        self.last_action = ['choose_algorithm', self.used_algorithm]
 
         self.used_algorithm = INTEGER_BRESENHAM
         self.integer_bresenham_button.setStyleSheet("background-color: yellow")
 
     def set_step_bresenham(self):
         '''Выбор алгоритма Брезенхема со сглаживанием'''
-        for button in self.algorithm_buttons:
-            button.setStyleSheet("background-color: white")
+        self.clear_algorithm_buttons()
+        self.last_action = ['choose_algorithm', self.used_algorithm]
 
         self.used_algorithm = STEP_BRESENHAM
         self.step_bresenham_button.setStyleSheet("background-color: yellow")
 
     def set_vu(self):
         '''Выбор алгоритма Ву'''
-        for button in self.algorithm_buttons:
-            button.setStyleSheet("background-color: white")
+        self.clear_algorithm_buttons()
+        self.last_action = ['choose_algorithm', self.used_algorithm]
 
         self.used_algorithm = VU
         self.vu_button.setStyleSheet("background-color: yellow")
 
     def set_library(self):
         '''Выбор библиотечного алгоритма'''
-        for button in self.algorithm_buttons:
-            button.setStyleSheet("background-color: white")
+        self.clear_algorithm_buttons()
+        self.last_action = ['choose_algorithm', self.used_algorithm]
 
         self.used_algorithm = LIBRARY
         self.library_button.setStyleSheet("background-color: yellow")
@@ -272,6 +280,8 @@ class MainWindow(Ui_MainWindow, QMainWindow):
                 coordinates = self.get_coordinates()
 
             if coordinates:
+                if is_drawn:
+                    self.last_action = ['use_algorithm', len(self.draw_scene.items())]
                 x_start, y_start, x_end, y_end = coordinates
 
                 if algorithm_index == DDA:
@@ -317,6 +327,44 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.draw_scene.clear()
         self.draw_scene.list_for_axises = []
         self.draw_scene.draw_axises(self.ui.scene_graphicsView.width(), self.ui.scene_graphicsView.height())
+
+    def reverse_last_action(self):
+        '''Отмена последнего действия'''
+        if len(self.last_action) == 0:
+            self.create_message('Невозможно отменить более одного или еще не совершенные действия.')
+        elif self.last_action[0] == 'change_line_color':
+            '''Отмена выбора цвета линии'''
+            self.draw_scene.change_line_color(self.last_action[1])
+            self.line_color_label.setStyleSheet("background-color: {}".format(self.last_action[1]))
+        elif self.last_action[0] == 'change_background_color':
+            '''Отмена выбора цвета фона'''
+            self.draw_scene.change_background_color(self.last_action[1])
+            self.background_color_label.setStyleSheet("background-color: {}".format(self.last_action[1]))
+        elif self.last_action[0] == 'use_algorithm':
+            '''Отмена рисования линии'''
+            for i in range(len(self.draw_scene.items()) - self.last_action[1]):
+                self.draw_scene.removeItem((self.draw_scene.items())[0])
+        elif self.last_action[0] == 'choose_algorithm':
+            '''Отмена выбора алгоритма'''
+            if self.last_action[1] == None:
+                self.clear_algorithm_buttons()
+            elif self.last_action[1] == DDA:
+                self.set_dda()
+            elif self.last_action[1] == BRESENHAM:
+                self.set_bresenham()
+            elif self.last_action[1] == INTEGER_BRESENHAM:
+                self.set_integer_bresenham()
+            elif self.last_action[1] == STEP_BRESENHAM:
+                self.set_step_bresenham()
+            elif self.last_action[1] == VU:
+                self.set_vu()
+            elif self.last_action[1] == LIBRARY:
+                self.set_library()
+
+            self.used_algorithm = self.last_action[1]
+
+        self.last_action = []
+
 
 
 
