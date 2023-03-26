@@ -1,7 +1,17 @@
 from mainwindow import Ui_MainWindow
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QAction, qApp, QGraphicsScene, QTableWidgetItem
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QAction, qApp, QGraphicsScene, QTableWidgetItem, \
+    QColorDialog
 from PyQt5.QtGui import QPen, QBrush, QColor
 from PyQt5.QtCore import Qt, QObject
+from dda import dda
+from bresenham import *
+
+DDA = 1
+BRESENHAM = 2
+INTEGER_BRESENHAM = 3
+STEP_BRESENHAM = 4
+VU = 5
+LIBRARY = 6
 
 class MyGraphicScene(QGraphicsScene):
     def __init__(self, width, height):
@@ -51,7 +61,7 @@ class MyGraphicScene(QGraphicsScene):
         if temp_color != self.line_color:
             self.line_color = temp_color
 
-    def change_bg_color(self, color):
+    def change_background_color(self, color):
         '''Замена цвета фона'''
         temp_color = QColor(color)
         if temp_color != self.background_color:
@@ -78,11 +88,12 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         quit.triggered.connect(qApp.quit)
         self.exit.addAction(quit)
 
-        """Очистка экрана через меню"""
-        self.clear = self.ui.exit_menu
-        clear = QAction("Очистить графическую сцену", self)
-        #clear.triggered.connect(self.clear_all_scene)
-        self.clear.addAction(clear)
+        """Выход из программы через меню"""
+        self.exit = self.ui.exit_menu
+        quit = QAction("Выход", self)
+        quit.setShortcut('Ctrl+Q')
+        quit.triggered.connect(qApp.quit)
+        self.exit.addAction(quit)
 
         """Вывод информации об авторе"""
         self.author_info = self.ui.author_menu
@@ -96,8 +107,19 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         lab_info.triggered.connect(self.lab_message)
         self.lab_info.addAction(lab_info)
 
-        """Поля ввода координат точки"""
+        """Поля для отображения цвета"""
+        self.line_color_label = self.ui.line_color_label
+        self.line_color_label.setStyleSheet("background-color: black")
+        self.background_color_label = self.ui.background_color_label
 
+        """Поля ввода"""
+        self.x_start_line = self.ui.x_start_lineEdit
+        self.x_end_line = self.ui.x_end_lineEdit
+        self.y_start_line = self.ui.y_start_lineEdit
+        self.y_end_line = self.ui.y_end_lineEdit
+
+        self.angle_line = self.ui.angle_lineEdit
+        self.repeats_line = self.ui.line_length_lineEdit
 
         """Кнопки"""
         self.dda_button = self.ui.dda_pushButton
@@ -106,6 +128,9 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.step_bresenham_button = self.ui.step_bresenham_pushButton
         self.vu_button = self.ui.vu_pushButton
         self.library_button = self.ui.library_pushButton
+
+        self.algorithm_buttons = [self.dda_button, self.bresenham_button, self.integer_bresenham_button,
+                                  self.step_bresenham_button, self.vu_button, self.library_button]
 
         self.change_line_color_button = self.ui.line_color_pushButton
         self.change_background_color_button = self.ui.background_color_pushButton
@@ -120,8 +145,21 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.clear_button = self.ui.clear_pushButton
 
         """Привязка действий к нажатию кнопок"""
-        #self.add_point_to_first_button.clicked.connect(self.add_point_to_first)
+        self.change_line_color_button.clicked.connect(self.set_line_color)
+        self.change_background_color_button.clicked.connect(self.set_background_color)
 
+        self.dda_button.clicked.connect(self.set_dda)
+        self.bresenham_button.clicked.connect(self.set_bresenham)
+        self.integer_bresenham_button.clicked.connect(self.set_integer_bresenham)
+        self.step_bresenham_button.clicked.connect(self.set_step_bresenham)
+        self.vu_button.clicked.connect(self.set_vu)
+        self.library_button.clicked.connect(self.set_library)
+
+        self.add_line_button.clicked.connect(lambda: self.choose_algorithm(self.used_algorithm))
+
+        self.clear_button.clicked.connect(self.clear_scene)
+
+        self.used_algorithm = None
 
     """Создание оповещения"""
     def create_message(self, text):
@@ -153,6 +191,132 @@ class MainWindow(Ui_MainWindow, QMainWindow):
                     "введя их координаты или выделив строку с необходимой точкой в таблице точек - при этом координаты "
                     "точки появятся в поле для ввода координат, а точка подсветится фиолетовым цветом.")
         msg.exec()
+
+    def set_line_color(self):
+        '''Выбор цвета линии'''
+        color = QColorDialog.getColor()
+
+        if color.isValid():
+            self.line_color_label.setStyleSheet("background-color: {}".format(color.name()))
+            self.draw_scene.change_line_color(color.name())
+
+    def set_background_color(self):
+        '''Выбор цвета фона'''
+        color = QColorDialog.getColor()
+
+        if color.isValid():
+            self.background_color_label.setStyleSheet("background-color: {}".format(color.name()))
+            self.draw_scene.change_background_color(color.name())
+
+    def draw_line_by_algorithm(self, list_points):
+        '''Рисование точек'''
+        for point in list_points:
+            self.draw_scene.addRect(point[0], point[1], 1, 1,
+                                  QPen(self.draw_scene.line_color if len(point) == 2 else point[2]))
+
+    def set_dda(self):
+        '''Выбор ЦДА'''
+        for button in self.algorithm_buttons:
+            button.setStyleSheet("background-color: white")
+
+        self.used_algorithm = DDA
+        self.dda_button.setStyleSheet("background-color: yellow")
+
+    def set_bresenham(self):
+        '''Выбор алгоритма Брезенхема'''
+        for button in self.algorithm_buttons:
+            button.setStyleSheet("background-color: white")
+
+        self.used_algorithm = BRESENHAM
+        self.bresenham_button.setStyleSheet("background-color: yellow")
+
+    def set_integer_bresenham(self):
+        '''Выбор целочисленного алгоритма Брезенхема'''
+        for button in self.algorithm_buttons:
+            button.setStyleSheet("background-color: white")
+
+        self.used_algorithm = INTEGER_BRESENHAM
+        self.integer_bresenham_button.setStyleSheet("background-color: yellow")
+
+    def set_step_bresenham(self):
+        '''Выбор алгоритма Брезенхема со сглаживанием'''
+        for button in self.algorithm_buttons:
+            button.setStyleSheet("background-color: white")
+
+        self.used_algorithm = STEP_BRESENHAM
+        self.step_bresenham_button.setStyleSheet("background-color: yellow")
+
+    def set_vu(self):
+        '''Выбор алгоритма Ву'''
+        for button in self.algorithm_buttons:
+            button.setStyleSheet("background-color: white")
+
+        self.used_algorithm = VU
+        self.vu_button.setStyleSheet("background-color: yellow")
+
+    def set_library(self):
+        '''Выбор библиотечного алгоритма'''
+        for button in self.algorithm_buttons:
+            button.setStyleSheet("background-color: white")
+
+        self.used_algorithm = LIBRARY
+        self.library_button.setStyleSheet("background-color: yellow")
+
+    def choose_algorithm(self, algorithm_index, coordinates=None, is_drawn=True):
+        points_list = list()
+
+        if not algorithm_index:
+            self.create_message('Не выбран алгоритм построения')
+        else:
+            if not coordinates:
+                coordinates = self.get_coordinates()
+
+            if coordinates:
+                x_start, y_start, x_end, y_end = coordinates
+
+                if algorithm_index == DDA:
+                    points_list = dda(x_start, x_end, y_start, y_end)
+                elif algorithm_index == BRESENHAM:
+                    points_list = bresenham_for_float(x_start, x_end, y_start, y_end)
+                elif algorithm_index == INTEGER_BRESENHAM:
+                    points_list = integer_bresenham(x_start, x_end, y_start, y_end)
+                elif algorithm_index == STEP_BRESENHAM:
+                    points_list = step_bresenham(x_start, x_end, y_start, y_end, self.draw_scene.line_color)
+                elif algorithm_index == LIBRARY:
+                    self.draw_scene.addLine(x_start, y_start, x_end, y_end, QPen(self.draw_scene.line_color))
+
+                if algorithm_index != LIBRARY and is_drawn:
+                    self.draw_line_by_algorithm(points_list)
+
+
+
+
+    def get_coordinates(self):
+        '''Ввод координат отрезка'''
+        result = None
+        max_value_x = self.ui.scene_graphicsView.width()
+        max_value_y = self.ui.scene_graphicsView.height()
+
+        try:
+            x_start = float(self.x_start_line.text())
+            x_end = float(self.x_end_line.text())
+            y_start = float(self.y_start_line.text())
+            y_end = float(self.y_end_line.text())
+        except:
+            self.create_message("Вы ввели неверные координаты. Координаты должны быть числовыми")
+        else:
+            if 0 <= x_start < max_value_x and 0 <= x_end < max_value_x and 0 <= y_start < max_value_y and 0 <= y_end < max_value_y:
+                result = [x_start, y_start, x_end, y_end]
+            else:
+                self.create_message('Введенные координаты находятся вне холста')
+
+        return result
+
+    def clear_scene(self):
+        '''Очистка сцены'''
+        self.draw_scene.clear()
+        self.draw_scene.list_for_axises = []
+        self.draw_scene.draw_axises(self.ui.scene_graphicsView.width(), self.ui.scene_graphicsView.height())
 
 
 
