@@ -9,6 +9,7 @@ from dda import dda
 from vu import vu
 from bresenham import *
 from help_functions import spin_point
+import matplotlib.pyplot as plt
 
 DDA = 1
 BRESENHAM = 2
@@ -165,6 +166,8 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.clear_button.clicked.connect(self.clear_scene)
         self.step_back.clicked.connect(self.reverse_last_action)
 
+        self.time_compare_button.clicked.connect(self.time_characteristics)
+
         self.used_algorithm = None
         self.last_action = list()
 
@@ -289,6 +292,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
                     self.last_action = ['use_algorithm', len(self.draw_scene.items())]
                 x_start, y_start, x_end, y_end = coordinates
 
+                time_start = time.time()
                 if algorithm_index == DDA:
                     points_list = dda(x_start, x_end, y_start, y_end)
                 elif algorithm_index == BRESENHAM:
@@ -304,6 +308,10 @@ class MainWindow(Ui_MainWindow, QMainWindow):
 
                 if algorithm_index != LIBRARY and is_drawn:
                     self.draw_line_by_algorithm(points_list)
+
+                time_end = time.time()
+
+                return time_end - time_start
 
     def draw_spectrum(self, algorithm_index, coordinates=None, angle=None, is_drawn=True):
         '''Построение спектра'''
@@ -321,24 +329,14 @@ class MainWindow(Ui_MainWindow, QMainWindow):
                     if is_drawn:
                         count_items = len(self.draw_scene.items())
 
-                    total = 0
-                    time_start = 0
-                    time_end = 0
-
                     for i in range(int(360 // angle)):
-                        time_start = time.time()
                         self.choose_algorithm(algorithm_index, coordinates, is_drawn)
-                        time_end = time.time()
                         coordinates[2], coordinates[3] = spin_point([coordinates[2], coordinates[3]], [coordinates[0],
                                                                       coordinates[1]], radians(angle))
 
-                        total += time_end - time_start
 
                     self.last_action = ['draw_spectrum', count_items]
 
-                    return total
-
-        return None
 
     def get_angle(self):
         '''Ввод угла поворота'''
@@ -348,6 +346,21 @@ class MainWindow(Ui_MainWindow, QMainWindow):
             result = int(self.angle_line.text())
         except:
             self.create_message('Угол задается целым числом градусов')
+
+        return result
+
+    def get_count_of_repeats(self):
+        '''Ввод числа повторов'''
+        result = None
+
+        try:
+            result = int(self.repeats_line.text())
+        except:
+            self.create_message('Число повторений задается целым положительным числом')
+        else:
+            if result <= 0:
+                self.create_message('Число повторений задается целым положительным числом')
+                result = None
 
         return result
 
@@ -419,8 +432,41 @@ class MainWindow(Ui_MainWindow, QMainWindow):
 
         self.last_action = []
 
+    def time_characteristics(self):
+        plt.figure('Временные характеристики работы алгоритмов построения отрезков', figsize=(9, 7))
+        list_times = [[], [], [], [], []]
 
+        coordinates = self.get_coordinates()
 
+        if coordinates:
+            repeats = self.get_count_of_repeats()
+
+            if repeats:
+                for i in range(repeats):
+                    list_times[0].append(self.choose_algorithm(DDA, coordinates, False))
+                    list_times[1].append(self.choose_algorithm(BRESENHAM, coordinates, False))
+                    list_times[2].append(self.choose_algorithm(INTEGER_BRESENHAM, coordinates, False))
+                    list_times[3].append(self.choose_algorithm(STEP_BRESENHAM, coordinates, False))
+                    list_times[4].append(self.choose_algorithm(VU, coordinates, False))
+
+                tuple_labers = ('ЦДА', 'Алгоритм \nБрезенхема с\nдействительными\nкоэффицентами',
+                                'Алгоритм \nБрезенхема с\nцелыми\nкоэффицентами',
+                                'Алгоритм \nБрезенхема с\n устранением\nступенчатости', 'Ву')
+
+                final_times = []
+
+                for i in range(len(list_times)):
+                    sum = 0
+                    for j in range(len(list_times[i])):
+                        sum += list_times[i][j]
+                    final_times.append(sum / repeats)
+
+                all_alg = range(len(final_times))
+
+                plt.bar(all_alg, final_times, align='center')
+                plt.xticks(all_alg, tuple_labers)
+                plt.ylabel('Секунды')
+                plt.show()
 
 if __name__ == '__main__':
     """Запуск приложения"""
