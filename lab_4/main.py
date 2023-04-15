@@ -7,6 +7,7 @@ from PyQt5.QtCore import Qt
 
 from canonical_algorithm import *
 from parametric_algorithm import *
+from bresenham import *
 from point_transform import *
 
 CANONICAL = 1
@@ -170,6 +171,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.ry_step_button.clicked.connect(self.set_ry)
 
         self.add_circle_button.clicked.connect(lambda: self.circles_algoritms(self.used_algorithm))
+        self.add_ellipse_button.clicked.connect(lambda: self.ellipses_algoritms(self.used_algorithm))
 
         self.used_algorithm = None
         self.used_axis = None
@@ -297,9 +299,43 @@ class MainWindow(Ui_MainWindow, QMainWindow):
             circle_points = canonical_circle(50)
         elif algorithm == PARAMETRIC:
             circle_points = parametric_circle(50)
+        elif algorithm == BRESENHAM:
+            circle_points = bresenham_circle(50)
 
-        circle_point_transform(circle_points, 500, 500)
+        point_transform_to_center(circle_points, 500, 500)
         self.draw_points_by_algorithm(circle_points)
+
+    def circles_algoritms(self, algorithm):
+        '''Построение окружности'''
+        if not algorithm:
+            self.create_message('Не выбран алгоритм построения')
+            return
+
+        if algorithm == CANONICAL:
+            circle_points = canonical_circle(50)
+        elif algorithm == PARAMETRIC:
+            circle_points = parametric_circle(50)
+        elif algorithm == BRESENHAM:
+            circle_points = bresenham_circle(50)
+
+        point_transform_to_center(circle_points, 500, 500)
+        self.draw_points_by_algorithm(circle_points)
+
+    def ellipses_algoritms(self, algorithm):
+        '''Построение эллипса'''
+        if not algorithm:
+            self.create_message('Не выбран алгоритм построения')
+            return
+
+        if algorithm == CANONICAL:
+            ellipse_points = canonical_ellipse(100, 50)
+        elif algorithm == PARAMETRIC:
+            ellipse_points = canonical_ellipse(50, 100)
+        elif algorithm == BRESENHAM:
+            pass
+
+        point_transform_to_center(ellipse_points, 500, 500)
+        self.draw_points_by_algorithm(ellipse_points)
 
 
 
