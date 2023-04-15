@@ -1,8 +1,13 @@
+from Lab_4.canonical_algorithm import canonical_circle
 from mainwindow import Ui_MainWindow
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QAction, qApp, QGraphicsScene, \
     QColorDialog
 from PyQt5.QtGui import QPen, QBrush, QColor
 from PyQt5.QtCore import Qt
+
+from canonical_algorithm import *
+from parametric_algorithm import *
+from point_transform import *
 
 CANONICAL = 1
 PARAMETRIC = 2
@@ -164,6 +169,8 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.rx_step_button.clicked.connect(self.set_rx)
         self.ry_step_button.clicked.connect(self.set_ry)
 
+        self.add_circle_button.clicked.connect(lambda: self.circles_algoritms(self.used_algorithm))
+
         self.used_algorithm = None
         self.used_axis = None
 
@@ -266,7 +273,33 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.draw_scene.list_for_axises = []
         self.draw_scene.draw_axises(self.ui.scene_graphicsView.width(), self.ui.scene_graphicsView.height())
 
+    def get_int(self, text, string):
+        '''Ввод из поля'''
+        result = None
 
+        try:
+            result = int(text)
+        except:
+            self.create_message(f'Ошибка: {string} - нецелое число')
+
+        return result
+
+    def draw_points_by_algorithm(self, list_points):
+        '''Рисование точек'''
+        for point in list_points:
+            self.draw_scene.addRect(point[0], point[1], 1, 1,
+                                  QPen(self.draw_scene.line_color if len(point) == 2 else point[2]))
+
+    def circles_algoritms(self, algorithm):
+
+        '''Построение окружности'''
+        if algorithm == CANONICAL:
+            circle_points = canonical_circle(50)
+        elif algorithm == PARAMETRIC:
+            circle_points = parametric_circle(50)
+
+        circle_point_transform(circle_points, 500, 500)
+        self.draw_points_by_algorithm(circle_points)
 
 
 
