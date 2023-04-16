@@ -37,4 +37,6 @@ def parametric_ellipse(a, b):
 
         ellipse.extend([[x, y], [x, -y], [-x, y], [-x, -y]])
 
+        t += step
+
     return ellipse

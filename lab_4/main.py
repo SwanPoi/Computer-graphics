@@ -8,6 +8,7 @@ from PyQt5.QtCore import Qt
 from canonical_algorithm import *
 from parametric_algorithm import *
 from bresenham import *
+from middle_point import *
 from point_transform import *
 
 CANONICAL = 1
@@ -128,7 +129,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.start_radius_line = self.ui.start_radius_lineEdit
         self.end_radius_line = self.ui.end_radius_lineEdit
         self.step_radius_line = self.ui.step_circle_lineEdit
-        self.count_circles = self.ui.count_circles_lineEdit
+        self.count_circles_line = self.ui.count_circles_lineEdit
 
         self.start_width_line = self.ui.start_width_lineEdit
         self.start_heigth_line = self.ui.start_height_lineEdit
@@ -172,6 +173,8 @@ class MainWindow(Ui_MainWindow, QMainWindow):
 
         self.add_circle_button.clicked.connect(lambda: self.circles_algoritms(self.used_algorithm))
         self.add_ellipse_button.clicked.connect(lambda: self.ellipses_algoritms(self.used_algorithm))
+
+        self.circle_spectrum_button.clicked.connect(lambda: self.circle_spectrum(self.used_algorithm))
 
         self.used_algorithm = None
         self.used_axis = None
@@ -293,32 +296,34 @@ class MainWindow(Ui_MainWindow, QMainWindow):
                                   QPen(self.draw_scene.line_color if len(point) == 2 else point[2]))
 
     def circles_algoritms(self, algorithm):
-
-        '''Построение окружности'''
-        if algorithm == CANONICAL:
-            circle_points = canonical_circle(50)
-        elif algorithm == PARAMETRIC:
-            circle_points = parametric_circle(50)
-        elif algorithm == BRESENHAM:
-            circle_points = bresenham_circle(50)
-
-        point_transform_to_center(circle_points, 500, 500)
-        self.draw_points_by_algorithm(circle_points)
-
-    def circles_algoritms(self, algorithm):
         '''Построение окружности'''
         if not algorithm:
             self.create_message('Не выбран алгоритм построения')
             return
 
-        if algorithm == CANONICAL:
-            circle_points = canonical_circle(50)
-        elif algorithm == PARAMETRIC:
-            circle_points = parametric_circle(50)
-        elif algorithm == BRESENHAM:
-            circle_points = bresenham_circle(50)
+        radius = self.get_int(self.circle_radius_line.text(), 'радиус')
+        x_center = self.get_int(self.x_center_line.text(), 'координата x центра')
+        y_center = self.get_int(self.y_center_line.text(), 'координата y центра')
 
-        point_transform_to_center(circle_points, 500, 500)
+        if radius is None or x_center is None or y_center is None:
+            return
+        elif radius == 0:
+            self.create_message('Радиус окружности не может равняться нулю')
+            return
+
+        self.clear_circle_algorithms(algorithm, radius, x_center, y_center)
+
+    def clear_circle_algorithms(self, algorithm, radius, x_center, y_center):
+        if algorithm == CANONICAL:
+            circle_points = canonical_circle(radius)
+        elif algorithm == PARAMETRIC:
+            circle_points = parametric_circle(radius)
+        elif algorithm == BRESENHAM:
+            circle_points = bresenham_circle(radius)
+        elif algorithm == MIDDLE_POINT:
+            circle_points = middle_point_circle(radius)
+
+        point_transform_to_center(circle_points, x_center, y_center)
         self.draw_points_by_algorithm(circle_points)
 
     def ellipses_algoritms(self, algorithm):
@@ -327,15 +332,87 @@ class MainWindow(Ui_MainWindow, QMainWindow):
             self.create_message('Не выбран алгоритм построения')
             return
 
-        if algorithm == CANONICAL:
-            ellipse_points = canonical_ellipse(100, 50)
-        elif algorithm == PARAMETRIC:
-            ellipse_points = canonical_ellipse(50, 100)
-        elif algorithm == BRESENHAM:
-            pass
+        x_center = self.get_int(self.x_center_line.text(), 'координата x центра')
+        y_center = self.get_int(self.y_center_line.text(), 'координата y центра')
+        a = self.get_int(self.ellipse_width_line.text(), 'полуось a')
+        b = self.get_int(self.ellipse_height_line.text(), 'полуось b')
 
-        point_transform_to_center(ellipse_points, 500, 500)
+        if x_center is None or y_center is None or a is None or b is None:
+            return
+        elif a == 0:
+            self.create_message('Ширина эллипса не может равняться нулю')
+            return
+        elif b == 0:
+            self.create_message('Высота эллипса не может равняться нулю')
+            return
+
+        self.clear_ellipse_algorithms(algorithm, a, b, x_center, y_center)
+
+    def clear_ellipse_algorithms(self, algorithm, a, b, x_center, y_center):
+        if algorithm == CANONICAL:
+            ellipse_points = canonical_ellipse(a, b)
+        elif algorithm == PARAMETRIC:
+            ellipse_points = parametric_ellipse(a, b)
+        elif algorithm == BRESENHAM:
+            ellipse_points = bresenham_ellipse(a, b)
+
+        point_transform_to_center(ellipse_points, x_center, y_center)
         self.draw_points_by_algorithm(ellipse_points)
+
+    def circle_spectrum(self, algorithm):
+        '''Построение спектра окружностей'''
+        if not algorithm:
+            self.create_message('Не выбран алгоритм построения')
+            return
+
+        start_radius = self.get_int(self.start_radius_line.text(), 'начальное значение радиуса')
+        end_radius = self.get_int(self.end_radius_line.text(), 'конечное значение радиуса')
+        count_circles = self.get_int(self.count_circles_line.text(), 'количество окружностей')
+        radius_step = self.get_int(self.step_radius_line.text(), 'шаг изменения радиуса')
+        x_center = self.get_int(self.x_center_line.text(), 'координата x центра')
+        y_center = self.get_int(self.y_center_line.text(), 'координата y центра')
+
+        if x_center is None or y_center is None or start_radius is None or end_radius is None or (count_circles is None and radius_step is None):
+            return
+        elif start_radius == 0 or end_radius == 0:
+            self.create_message('Радиус окружности не может равняться нулю')
+            return
+        elif count_circles is not None and count_circles <= 0:
+            self.create_message('Количество окружностей должно быть больше нуля')
+            return
+        elif radius_step is not None and radius_step == 0:
+            self.create_message('Шаг изменения радиуса не может равняться нулю')
+            return
+        elif count_circles is None and start_radius > end_radius and radius_step > 0:
+            self.create_message('Шаг изменения радиуса больше нуля, а радиус должен уменьшаться')
+            return
+        elif count_circles is None and start_radius < end_radius and radius_step < 0:
+            self.create_message('Шаг изменения радиуса меньше нуля, а радиус должен увеличиваться')
+            return
+
+        if radius_step is not None:
+            if start_radius <= end_radius:
+                while start_radius < end_radius:
+                    self.clear_circle_algorithms(algorithm, start_radius, x_center, y_center)
+                    start_radius += radius_step
+            elif start_radius > end_radius:
+                while start_radius >= end_radius:
+                    self.clear_circle_algorithms(algorithm, start_radius, x_center, y_center)
+                    start_radius += radius_step
+            else:
+                self.clear_circle_algorithms(algorithm, start_radius, x_center, y_center)
+        elif count_circles is not None:
+
+            step = round(abs(start_radius - end_radius) / count_circles)
+
+            if start_radius > end_radius:
+                step *= -1
+                end_radius -= 2
+            
+            for i_radius in range(start_radius, end_radius + 1, step):
+                self.clear_circle_algorithms(algorithm, i_radius, x_center, y_center)
+
+
 
 
 
