@@ -26,6 +26,7 @@ Y = 20
 TIME_START_RADIUS = 100
 TIME_END_RADIUS = 1000
 TIME_STEP_RADIUS = 50
+TIME_Y_AXIS = 50
 TIME_REPEATS = 100
 
 class MyGraphicScene(QGraphicsScene):
@@ -119,7 +120,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.clear = self.ui.clear_menu
         clear = QAction("Очистка сцены", self)
         clear.triggered.connect(self.clear_scene)
-        self.lab_info.addAction(clear)
+        self.clear.addAction(clear)
 
         """Поля для отображения цвета"""
         self.line_color_label = self.ui.line_color_label
@@ -189,6 +190,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.ellipse_spectrum_button.clicked.connect(lambda: self.ellipse_spectrum(self.used_algorithm))
 
         self.circle_time_button.clicked.connect(self.time_circle_characteristics)
+        self.ellipse_time_button.clicked.connect(self.time_ellipse_characteristics)
 
         self.used_algorithm = None
         self.used_axis = None
@@ -209,7 +211,20 @@ class MainWindow(Ui_MainWindow, QMainWindow):
     def lab_message(self):
         msg = QMessageBox()
         msg.setWindowTitle("Информация о программе")
-        msg.setText("")
+        msg.setText("Программа строит растровые окружности и эллипсы с помощью следующих алгоритмов:\n"
+                    "1) Каноническое уравнение\n"
+                    "2) Параметрическое уравнение\n"
+                    "3) Алгоритм Брезенхема\n"
+                    "4) Алгоритм средней точки\n"
+                    "5) Средствами Qt\n"
+                    "Программа предоставляет возможность выбирать цвет пикселей, а также цвет фона.\n"
+                    "Все вводимые данные задаются целыми числами. При построении спектров окружностей необходимо ввести или "
+                    "(Начальный радиус, конечный радиус, шаг радиуса), или (Начальный радиус, конечный радиус, число окружностей). "
+                    "При вводе и шага радиуса, и числа окружностей  приоритет отдается шагу радиуса. Если начальный радиус меньше конечного, "
+                    "шаг радиуса может быть отрицательным. Число окружностей строго больше нуля.\n"
+                    "Исследование зависимости времени построения от радиуса (полуоси) происходит для окружности с "
+                    "радиусом от 100 до 1000 с шагом 50 и центром (0, 0), для"
+                    " эллипса с полуосью А от 100 до 1000 с шагом 50 и центром (0, 0). Количество повторов каждого действия - 100.")
         msg.exec()
 
     def set_line_color(self):
@@ -372,6 +387,8 @@ class MainWindow(Ui_MainWindow, QMainWindow):
             ellipse_points = parametric_ellipse(a, b)
         elif algorithm == BRESENHAM:
             ellipse_points = bresenham_ellipse(a, b)
+        elif algorithm == MIDDLE_POINT:
+            ellipse_points = middle_point_ellipse(a, b)
 
         if algorithm == LIBRARY:
             self.draw_scene.addEllipse(x_center - a, y_center - b, a * 2, b * 2, QPen(self.draw_scene.line_color))
@@ -472,8 +489,8 @@ class MainWindow(Ui_MainWindow, QMainWindow):
                 start_b += radius_step
                 start_a = round(a_to_b * start_b)
 
-
     def time_circle_characteristics(self):
+        '''Замеры зависимости времени построения окружности от радиуса'''
         list_times = [[], [], [], []]
         list_of_algorithms = [canonical_circle, parametric_circle, bresenham_circle, middle_point_circle]
 
@@ -506,6 +523,45 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         plt.legend()
         plt.ylabel("Время выполнения, сек")
         plt.xlabel("Радиус")
+
+        plt.show()
+
+    def time_ellipse_characteristics(self):
+        '''Замеры зависимости времени построения эллипса от полуоси Х'''
+        a_to_b = TIME_START_RADIUS / TIME_Y_AXIS
+        list_times = [[], [], [], []]
+        list_of_algorithms = [canonical_ellipse, parametric_ellipse, bresenham_ellipse, middle_point_ellipse]
+
+        for i in range(len(list_times)):
+            arr = [0] * ((TIME_END_RADIUS - TIME_START_RADIUS) // TIME_STEP_RADIUS)
+            list_times[i].extend(arr)
+
+        for k in range(len(list_of_algorithms)):
+            i_radius = 0
+            for i in range(TIME_START_RADIUS, TIME_END_RADIUS + 1, TIME_STEP_RADIUS):
+                b = round(i / a_to_b)
+                for j in range(TIME_REPEATS):
+                    time_start = time.time()
+                    points_list = list_of_algorithms[k](i, b)
+                    time_end = time.time()
+
+                    list_times[k][i_radius] += time_end - time_start
+
+                #list_times[k][i_radius] /= TIME_REPEATS
+                i_radius += 1
+
+        radiuses = list(range(TIME_START_RADIUS, TIME_END_RADIUS, TIME_STEP_RADIUS))
+        plt.figure("Временные характеристики работы алгоритмов построения эллипсов (эллипс с центром в (0, 0)).", figsize=(18, 10))
+
+        plt.plot(radiuses, list_times[0], label="Каноническое \nуравнение")
+        plt.plot(radiuses, list_times[1], '-*', label="Параметрическое \nуравнение")
+        plt.plot(radiuses, list_times[2], '-.', label="Брензенхем")
+        plt.plot(radiuses, list_times[3], '.', label="Алгоритм \n средней \nточки")
+        plt.title("Исследование зависимости времени построения эллипса от радиуса (проведено 100 повторов).")
+        plt.xticks(np.arange(100, 1001, 50))
+        plt.legend()
+        plt.ylabel("Время выполнения, сек")
+        plt.xlabel("Полуось A")
 
         plt.show()
 
