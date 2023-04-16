@@ -93,7 +93,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        self.setWindowTitle("Лабораторная №3 по компьютерной графике")
+        self.setWindowTitle("Лабораторная №4 по компьютерной графике")
 
         self.draw_scene = MyGraphicScene(self.ui.scene_graphicsView.width(), self.ui.scene_graphicsView.height())
         self.ui.scene_graphicsView.setScene(self.draw_scene)
