@@ -538,7 +538,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
 
         for k in range(len(list_of_algorithms)):
             i_radius = 0
-            for i in range(TIME_START_RADIUS, TIME_END_RADIUS + 1, TIME_STEP_RADIUS):
+            for i in range(TIME_START_RADIUS, TIME_END_RADIUS, TIME_STEP_RADIUS):
                 b = round(i / a_to_b)
                 for j in range(TIME_REPEATS):
                     time_start = time.time()
@@ -558,7 +558,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         plt.plot(radiuses, list_times[2], '-.', label="Брензенхем")
         plt.plot(radiuses, list_times[3], '.', label="Алгоритм \n средней \nточки")
         plt.title("Исследование зависимости времени построения эллипса от радиуса (проведено 100 повторов).")
-        plt.xticks(np.arange(100, 1001, 50))
+        plt.xticks(np.arange(100, 1000, 50))
         plt.legend()
         plt.ylabel("Время выполнения, сек")
         plt.xlabel("Полуось A")
