@@ -175,6 +175,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.add_ellipse_button.clicked.connect(lambda: self.ellipses_algoritms(self.used_algorithm))
 
         self.circle_spectrum_button.clicked.connect(lambda: self.circle_spectrum(self.used_algorithm))
+        self.ellipse_spectrum_button.clicked.connect(lambda: self.ellipse_spectrum(self.used_algorithm))
 
         self.used_algorithm = None
         self.used_axis = None
@@ -307,8 +308,8 @@ class MainWindow(Ui_MainWindow, QMainWindow):
 
         if radius is None or x_center is None or y_center is None:
             return
-        elif radius == 0:
-            self.create_message('Радиус окружности не может равняться нулю')
+        elif radius <= 0:
+            self.create_message('Радиус окружности не может быть меньше или равен нулю')
             return
 
         self.clear_circle_algorithms(algorithm, radius, x_center, y_center)
@@ -323,8 +324,11 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         elif algorithm == MIDDLE_POINT:
             circle_points = middle_point_circle(radius)
 
-        point_transform_to_center(circle_points, x_center, y_center)
-        self.draw_points_by_algorithm(circle_points)
+        if algorithm == LIBRARY:
+            self.draw_scene.addEllipse(x_center - radius, y_center - radius, radius * 2, radius * 2, QPen(self.draw_scene.line_color))
+        else:
+            point_transform_to_center(circle_points, x_center, y_center)
+            self.draw_points_by_algorithm(circle_points)
 
     def ellipses_algoritms(self, algorithm):
         '''Построение эллипса'''
@@ -339,11 +343,11 @@ class MainWindow(Ui_MainWindow, QMainWindow):
 
         if x_center is None or y_center is None or a is None or b is None:
             return
-        elif a == 0:
-            self.create_message('Ширина эллипса не может равняться нулю')
+        elif a <= 0:
+            self.create_message('Ширина эллипса не может быть меньше или равна нулю')
             return
-        elif b == 0:
-            self.create_message('Высота эллипса не может равняться нулю')
+        elif b <= 0:
+            self.create_message('Высота эллипса не может быть меньше или равна нулю')
             return
 
         self.clear_ellipse_algorithms(algorithm, a, b, x_center, y_center)
@@ -356,8 +360,11 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         elif algorithm == BRESENHAM:
             ellipse_points = bresenham_ellipse(a, b)
 
-        point_transform_to_center(ellipse_points, x_center, y_center)
-        self.draw_points_by_algorithm(ellipse_points)
+        if algorithm == LIBRARY:
+            self.draw_scene.addEllipse(x_center - a, y_center - b, a * 2, b * 2, QPen(self.draw_scene.line_color))
+        else:
+            point_transform_to_center(ellipse_points, x_center, y_center)
+            self.draw_points_by_algorithm(ellipse_points)
 
     def circle_spectrum(self, algorithm):
         '''Построение спектра окружностей'''
@@ -374,8 +381,8 @@ class MainWindow(Ui_MainWindow, QMainWindow):
 
         if x_center is None or y_center is None or start_radius is None or end_radius is None or (count_circles is None and radius_step is None):
             return
-        elif start_radius == 0 or end_radius == 0:
-            self.create_message('Радиус окружности не может равняться нулю')
+        elif start_radius <= 0 or end_radius <= 0:
+            self.create_message('Радиус окружности не может быть меньше или равен нулю')
             return
         elif count_circles is not None and count_circles <= 0:
             self.create_message('Количество окружностей должно быть больше нуля')
@@ -383,15 +390,15 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         elif radius_step is not None and radius_step == 0:
             self.create_message('Шаг изменения радиуса не может равняться нулю')
             return
-        elif count_circles is None and start_radius > end_radius and radius_step > 0:
+        elif start_radius > end_radius and radius_step > 0:
             self.create_message('Шаг изменения радиуса больше нуля, а радиус должен уменьшаться')
             return
-        elif count_circles is None and start_radius < end_radius and radius_step < 0:
+        elif start_radius < end_radius and radius_step < 0:
             self.create_message('Шаг изменения радиуса меньше нуля, а радиус должен увеличиваться')
             return
 
         if radius_step is not None:
-            if start_radius <= end_radius:
+            if start_radius < end_radius:
                 while start_radius < end_radius:
                     self.clear_circle_algorithms(algorithm, start_radius, x_center, y_center)
                     start_radius += radius_step
@@ -408,9 +415,50 @@ class MainWindow(Ui_MainWindow, QMainWindow):
             if start_radius > end_radius:
                 step *= -1
                 end_radius -= 2
-            
+
             for i_radius in range(start_radius, end_radius + 1, step):
                 self.clear_circle_algorithms(algorithm, i_radius, x_center, y_center)
+
+    def ellipse_spectrum(self, algorithm):
+        '''Построение спектра эллипсов'''
+        if not algorithm:
+            self.create_message('Не выбран алгоритм построения')
+            return
+
+        if not self.used_axis:
+            self.create_message('Не выбрана полуось, к которой применяются введенные преобразования')
+            return
+
+        start_a = self.get_int(self.start_width_line.text(), 'начальная ширина эллипса')
+        start_b = self.get_int(self.start_heigth_line.text(), 'начальная высота эллипса')
+        count_ellipses = self.get_int(self.count_ellipses_line.text(), 'количество эллипсов')
+        radius_step = self.get_int(self.step_ellipse_line.text(), 'шаг изменения полуоси')
+        x_center = self.get_int(self.x_center_line.text(), 'координата x центра')
+        y_center = self.get_int(self.y_center_line.text(), 'координата y центра')
+
+        if x_center is None or y_center is None or start_a is None or start_b is None or count_ellipses is None or radius_step is None:
+            return
+        elif start_a <= 0 or start_b <= 0:
+            self.create_message('Полуоси не могут быть меньше или равняться нулю')
+            return
+        elif count_ellipses <= 0:
+            self.create_message('Количество эллипсов должно быть больше нуля')
+            return
+        elif radius_step == 0:
+            self.create_message('Шаг изменения радиуса не может равняться нулю')
+            return
+
+        a_to_b = start_a / start_b
+        for i in range(count_ellipses):
+            self.clear_ellipse_algorithms(algorithm, start_a, start_b, x_center, y_center)
+
+            if self.used_axis == X:
+                start_a += radius_step
+                start_b = round(start_a / a_to_b)
+            else:
+                start_b += radius_step
+                start_a = round(a_to_b * start_b)
+
 
 
 
