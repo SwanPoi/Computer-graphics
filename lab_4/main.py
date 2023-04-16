@@ -4,6 +4,9 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QAction, qAp
     QColorDialog
 from PyQt5.QtGui import QPen, QBrush, QColor
 from PyQt5.QtCore import Qt
+import matplotlib.pyplot as plt
+import time
+import numpy as np
 
 from canonical_algorithm import *
 from parametric_algorithm import *
@@ -19,6 +22,11 @@ LIBRARY = 5
 
 X = 10
 Y = 20
+
+TIME_START_RADIUS = 100
+TIME_END_RADIUS = 1000
+TIME_STEP_RADIUS = 50
+TIME_REPEATS = 100
 
 class MyGraphicScene(QGraphicsScene):
     def __init__(self, width, height):
@@ -158,6 +166,9 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.rx_step_button = self.ui.rx_pushButton
         self.ry_step_button = self.ui.ry_pushButton
 
+        self.circle_time_button = self.ui.circle_time_pushButton
+        self.ellipse_time_button = self.ui.ellipse_time_pushButton
+
         """Привязка действий к нажатию кнопок"""
         self.change_line_color_button.clicked.connect(self.set_line_color)
         self.change_background_color_button.clicked.connect(self.set_background_color)
@@ -176,6 +187,8 @@ class MainWindow(Ui_MainWindow, QMainWindow):
 
         self.circle_spectrum_button.clicked.connect(lambda: self.circle_spectrum(self.used_algorithm))
         self.ellipse_spectrum_button.clicked.connect(lambda: self.ellipse_spectrum(self.used_algorithm))
+
+        self.circle_time_button.clicked.connect(self.time_circle_characteristics)
 
         self.used_algorithm = None
         self.used_axis = None
@@ -460,7 +473,41 @@ class MainWindow(Ui_MainWindow, QMainWindow):
                 start_a = round(a_to_b * start_b)
 
 
+    def time_circle_characteristics(self):
+        list_times = [[], [], [], []]
+        list_of_algorithms = [canonical_circle, parametric_circle, bresenham_circle, middle_point_circle]
 
+        for i in range(len(list_times)):
+            arr = [0] * ((TIME_END_RADIUS - TIME_START_RADIUS) // TIME_STEP_RADIUS)
+            list_times[i].extend(arr)
+
+        for k in range(len(list_of_algorithms)):
+            i_radius = 0
+            for i in range(TIME_START_RADIUS, TIME_END_RADIUS, TIME_STEP_RADIUS):
+                for j in range(TIME_REPEATS):
+                    time_start = time.time()
+                    points_list = list_of_algorithms[k](i)
+                    time_end = time.time()
+
+                    list_times[k][i_radius] += time_end - time_start
+
+                #list_times[k][i_radius] /= TIME_REPEATS
+                i_radius += 1
+
+        radiuses = list(range(TIME_START_RADIUS, TIME_END_RADIUS, TIME_STEP_RADIUS))
+        plt.figure("Временные характеристики работы алгоритмов построения окружностей (окружность с центром в (0, 0)).", figsize=(18, 10))
+
+        plt.plot(radiuses, list_times[0], label="Каноническое \nуравнение")
+        plt.plot(radiuses, list_times[1], '-*', label="Параметрическое \nуравнение")
+        plt.plot(radiuses, list_times[2], '-.', label="Брензенхем")
+        plt.plot(radiuses, list_times[3], '.', label="Алгоритм \n средней \nточки")
+        plt.title("Исследование зависимости времени построения окружности от радиуса (проведено 100 повторов).")
+        plt.xticks(np.arange(100, 1001, 50))
+        plt.legend()
+        plt.ylabel("Время выполнения, сек")
+        plt.xlabel("Радиус")
+
+        plt.show()
 
 
 

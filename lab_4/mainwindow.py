@@ -41,7 +41,7 @@ class MyGraphicsView(QGraphicsView):
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1121, 813)
+        MainWindow.resize(1121, 867)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QtWidgets.QGridLayout(self.centralwidget)
@@ -86,7 +86,7 @@ class Ui_MainWindow(object):
         self.color_label.setGeometry(QtCore.QRect(10, 210, 261, 21))
         self.color_label.setObjectName("color_label")
         self.groupBox_3 = QtWidgets.QGroupBox(self.groupBox)
-        self.groupBox_3.setGeometry(QtCore.QRect(0, 310, 295, 431))
+        self.groupBox_3.setGeometry(QtCore.QRect(0, 310, 295, 481))
         self.groupBox_3.setObjectName("groupBox_3")
         self.x_center_label = QtWidgets.QLabel(self.groupBox_3)
         self.x_center_label.setGeometry(QtCore.QRect(10, 20, 111, 16))
@@ -150,7 +150,7 @@ class Ui_MainWindow(object):
         self.count_circles_lineEdit.setGeometry(QtCore.QRect(10, 330, 101, 21))
         self.count_circles_lineEdit.setObjectName("count_circles_lineEdit")
         self.circle_spectrum_pushButton = QtWidgets.QPushButton(self.groupBox_3)
-        self.circle_spectrum_pushButton.setGeometry(QtCore.QRect(0, 390, 131, 31))
+        self.circle_spectrum_pushButton.setGeometry(QtCore.QRect(0, 380, 131, 31))
         self.circle_spectrum_pushButton.setObjectName("circle_spectrum_pushButton")
         self.start_width_lineEdit = QtWidgets.QLineEdit(self.groupBox_3)
         self.start_width_lineEdit.setGeometry(QtCore.QRect(150, 210, 121, 16))
@@ -177,7 +177,7 @@ class Ui_MainWindow(object):
         self.count_ellipse_lineEdit.setGeometry(QtCore.QRect(140, 360, 131, 16))
         self.count_ellipse_lineEdit.setObjectName("count_ellipse_lineEdit")
         self.ellipse_spectrum_pushButton = QtWidgets.QPushButton(self.groupBox_3)
-        self.ellipse_spectrum_pushButton.setGeometry(QtCore.QRect(140, 390, 141, 31))
+        self.ellipse_spectrum_pushButton.setGeometry(QtCore.QRect(140, 380, 141, 31))
         self.ellipse_spectrum_pushButton.setObjectName("ellipse_spectrum_pushButton")
         self.rx_pushButton = QtWidgets.QPushButton(self.groupBox_3)
         self.rx_pushButton.setGeometry(QtCore.QRect(140, 310, 71, 28))
@@ -185,6 +185,12 @@ class Ui_MainWindow(object):
         self.ry_pushButton = QtWidgets.QPushButton(self.groupBox_3)
         self.ry_pushButton.setGeometry(QtCore.QRect(220, 310, 61, 28))
         self.ry_pushButton.setObjectName("ry_pushButton")
+        self.circle_time_pushButton = QtWidgets.QPushButton(self.groupBox_3)
+        self.circle_time_pushButton.setGeometry(QtCore.QRect(0, 420, 131, 61))
+        self.circle_time_pushButton.setObjectName("circle_time_pushButton")
+        self.ellipse_time_pushButton = QtWidgets.QPushButton(self.groupBox_3)
+        self.ellipse_time_pushButton.setGeometry(QtCore.QRect(140, 420, 131, 61))
+        self.ellipse_time_pushButton.setObjectName("ellipse_time_pushButton")
         self.gridLayout.addWidget(self.groupBox, 0, 0, 3, 2)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
@@ -242,6 +248,12 @@ class Ui_MainWindow(object):
         self.ellipse_spectrum_pushButton.setText(_translate("MainWindow", "Спектр эллипсов"))
         self.rx_pushButton.setText(_translate("MainWindow", "Rx"))
         self.ry_pushButton.setText(_translate("MainWindow", "Ry"))
+        self.circle_time_pushButton.setText(_translate("MainWindow", "Временные \n"
+"характеристики\n"
+"окружностей"))
+        self.ellipse_time_pushButton.setText(_translate("MainWindow", "Временные \n"
+"характеристики\n"
+"эллипсов"))
         self.program_menu.setTitle(_translate("MainWindow", "О программе"))
         self.author_menu.setTitle(_translate("MainWindow", "Об авторе"))
         self.exit_menu.setTitle(_translate("MainWindow", "Выход"))
