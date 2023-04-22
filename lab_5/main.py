@@ -1,8 +1,11 @@
 from mainwindow import Ui_MainWindow
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QAction, qApp, QGraphicsScene, QTableWidgetItem, \
-    QGraphicsView, QColorDialog
+    QGraphicsView, QColorDialog, QTableWidget
 from PyQt5.QtGui import QPen, QBrush
 from PyQt5.QtCore import Qt, QObject, pyqtSignal, QPoint
+
+from cap_algorithm import CAP_algorithm
+import time
 
 
 class GraphicScene(QGraphicsScene):
@@ -17,21 +20,14 @@ class GraphicScene(QGraphicsScene):
         modifiers = QApplication.keyboardModifiers()
         if event.button() == Qt.LeftButton:
             if modifiers == Qt.AltModifier:
-                #self.cur_polygon.append([self.cur_polygon[-1][0], event.scenePos().y()])
                 self.key_signal.emit(QPoint(int(event.scenePos().x()), int(event.scenePos().y())), 0)
             elif modifiers == Qt.ControlModifier:
-                #self.cur_polygon.append([event.scenePos().x(), self.cur_polygon[-1][1]])
                 self.key_signal.emit(QPoint(int(event.scenePos().x()), int(event.scenePos().y())), 1)
             else:
-                #self.cur_polygon.append([event.scenePos().x(), event.scenePos().y()])
                 self.point_signal.emit(QPoint(int(event.scenePos().x()), int(event.scenePos().y())))
-
-            #self.addEllipse(self.cur_polygon[-1][0], self.cur_polygon[-1][1], 5, 5)
 
         elif event.button() == Qt.RightButton:
             self.end_signal.emit()
-        # self.update()
-
 
 
 class MyWindow(QMainWindow):
@@ -54,11 +50,9 @@ class MyWindow(QMainWindow):
         """Координаты точек"""
         self.all_polygons = []
         self.cur_polygon = []
-        self.table_coordinates = []
-        self.buffer_coordinates = []
 
         self.line_color = Qt.red
-        self.color = Qt.green
+        self.color = Qt.yellow
         self.can_close = 1
 
         """Таблицы"""
@@ -67,6 +61,7 @@ class MyWindow(QMainWindow):
         self.points_table.setColumnCount(2)
         self.points_table.setRowCount(0)
         self.points_table.setHorizontalHeaderLabels(['x', 'y'])
+        self.points_table.setEditTriggers(QTableWidget.NoEditTriggers)
 
 
         """Выход из программы через меню"""
@@ -101,6 +96,8 @@ class MyWindow(QMainWindow):
         self.time_line = self.ui.lineEdit
 
         self.color_label = self.ui.color_label
+        self.color_label.setStyleSheet("background-color: yellow")
+
 
         """Кнопки"""
         self.delay_button = self.ui.dekay_pushButton
@@ -112,7 +109,11 @@ class MyWindow(QMainWindow):
 
         """Привязка действий к нажатию кнопок"""
         self.add_point_button.clicked.connect(self.add_point_from_lines)
+        self.close_figure_button.clicked.connect(self.finish_polygon)
         self.set_color_button.clicked.connect(self.set_color)
+        self.without_delay_button.clicked.connect(self.draw_filling)
+        self.delay_button.clicked.connect(lambda: self.draw_filling(delay=True))
+        self.time_button.clicked.connect(lambda: self.draw_filling(time_measure=True))
 
     """Создание оповещения"""
     def create_message(self, text):
@@ -130,7 +131,17 @@ class MyWindow(QMainWindow):
     def lab_message(self):
         msg = QMessageBox()
         msg.setWindowTitle("Информация о программе")
-        msg.setText("")
+        msg.setText("Программа реализует алгоритм с упорядоченным списком ребер со списком активных ребер.\n"
+                    "Программа позволяет вводить точки как сочетанием полей ввода и соответствующей кнопки, "
+                    "так и щелчком левой кнопкой мыши. Для ввода горизонтального ребра используется сочетание "
+                    "Ctrl+левая кнопка мыши, для ввода вертикального ребра - сочетание Alt+левая кнопка мыши. "
+                    "Для замыкания фигуры используется правая кнопка мыши или соответствующая кнопка интерфейса.\n"
+                    "Закраска возможна с задержкой и без задержки. Закраска производится в случае, если все фигуры "
+                    "замкнуты. При вводе после закраски дополнительных фигур "
+                    "все введенные объекты считаются единым изображением, предыдущая закраска не учитывается. "
+                    "Также программа позволяет произвести замер времени "
+                    "закраски без задержки с выводом графического результата закраски и временного значения в "
+                    "соответствующее поле.")
         msg.exec()
 
     def set_color(self):
@@ -142,10 +153,22 @@ class MyWindow(QMainWindow):
             self.color = color
 
     def draw_point(self, point : QPoint):
-        self.draw_scene.addEllipse(point.x(), point.y(), 5, 5)
+        self.draw_scene.addEllipse(point.x(), point.y(), 1, 1, QPen(Qt.black))
 
     def draw_line(self, first_point : QPoint, second_point : QPoint):
-        self.draw_scene.addLine(first_point.x(), first_point.y(), second_point.x(), second_point.y(), pen=QPen(self.line_color, 3))
+        self.draw_scene.addLine(first_point.x(), first_point.y(), second_point.x(), second_point.y(), pen=QPen(self.line_color))
+
+    def draw_polygon(self, polygon):
+        for i in range(len(polygon) - 1):
+            self.draw_point(QPoint(polygon[i][0], polygon[i][1]))
+            self.draw_line(QPoint(polygon[i][0], polygon[i][1]), QPoint(polygon[i + 1][0], polygon[i + 1][1]))
+
+        self.draw_point(QPoint(polygon[-1][0], polygon[-1][1]))
+        self.draw_line(QPoint(polygon[0][0], polygon[0][1]), QPoint(polygon[-1][0], polygon[-1][1]))
+
+    def draw_all_polygons(self):
+        for polygon in self.all_polygons:
+            self.draw_polygon(polygon)
 
     def add_row_to_table(self, first_value, second_value):
         self.points_table.insertRow(self.points_table.rowCount())
@@ -209,6 +232,26 @@ class MyWindow(QMainWindow):
     """Очистка всей сцены"""
     def clear_all_scene(self):
         self.draw_scene.clear()
+        self.all_polygons = []
+        self.cur_polygon = []
+        self.points_table.setRowCount(0)
+
+    def draw_filling(self, delay=False, time_measure=False):
+        if len(self.cur_polygon) != 0:
+            self.create_message('Для закраски все фигуры должны быть замкнуты.')
+            return
+
+        self.draw_scene.clear()
+        self.draw_all_polygons()
+
+        if time_measure:
+            time_start = time.time()
+            CAP_algorithm(self.all_polygons, self.color, self.draw_scene)
+            time_end = time.time()
+
+            self.time_line.setText(f'{time_end - time_start:.6f}')
+        else:
+            CAP_algorithm(self.all_polygons, self.color, self.draw_scene, delay)
 
 
 

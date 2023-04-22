@@ -9,6 +9,28 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtWidgets import QGraphicsView
+
+
+class MyGraphicsView(QGraphicsView):
+    cnt_calls_resizeEvent = 0
+    cnt_zoom = 0
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.cnt_calls_resizeEvent = 0
+        self.cnt_zoom = 0
+
+    def wheelEvent(self, event: QtGui.QWheelEvent) -> None:
+        self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+        scale_factor = 1.5
+
+        if event.angleDelta().y() > 0:
+            self.scale(scale_factor, scale_factor)
+            self.cnt_zoom += 1
+        elif self.cnt_zoom != 0:
+            self.scale(1 / scale_factor, 1 / scale_factor)
+            self.cnt_zoom -= 1
 
 
 class Ui_MainWindow(object):
@@ -81,7 +103,7 @@ class Ui_MainWindow(object):
         self.lineEdit.setObjectName("lineEdit")
         self.gridLayout.addWidget(self.lineEdit, 11, 2, 1, 1)
         self.gridLayout_2.addWidget(self.groupBox, 0, 0, 1, 1)
-        self.graphicsView = QtWidgets.QGraphicsView(self.centralwidget)
+        self.graphicsView = MyGraphicsView(self.centralwidget)
         self.graphicsView.setMaximumSize(QtCore.QSize(1677000, 1677000))
         self.graphicsView.setObjectName("graphicsView")
         self.gridLayout_2.addWidget(self.graphicsView, 0, 1, 1, 1)
