@@ -9,7 +9,9 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtGui import QImage
 from PyQt5.QtWidgets import QGraphicsView
+from PyQt5.QtCore import Qt
 
 
 class MyGraphicsView(QGraphicsView):
@@ -18,6 +20,8 @@ class MyGraphicsView(QGraphicsView):
 
     def __init__(self, parent):
         super().__init__(parent)
+        self.image = QImage(5000, 5000, QImage.Format_ARGB32)
+        self.image.fill(Qt.transparent)
         self.cnt_calls_resizeEvent = 0
         self.cnt_zoom = 0
 
