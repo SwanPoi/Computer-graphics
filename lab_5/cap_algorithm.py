@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from typing import List
-from math import floor
 import time
 
 from PyQt5.QtGui import QColor, QPen
@@ -32,48 +31,49 @@ def find_max_and_min_scanning_line(all_polygons : List):
             elif point[1] < y_min:
                 y_min = point[1]
 
-    return y_max - 1, y_min
+    return y_max, y_min
 
 def make_y_groups_list(y_max : int, y_min : int, all_polygons : List):
     scan_lines_dict = dict({i : list() for i in range(y_max, y_min - 1, -1)})
 
     for polygon in all_polygons:
         for i in range(len(polygon) - 1):
-            dy = abs(polygon[i + 1][1] - polygon[i][1])
+            x_start = polygon[i][0]
+            x_end = polygon[i + 1][0]
+            y_start = polygon[i][1]
+            y_end = polygon[i + 1][1]
 
-            if (polygon[i][0] - polygon[i + 1][0] == 0):
-                x = polygon[i][0]
-            elif dy != 0:
-                x = get_intersection_point(polygon[i], polygon[i + 1], max(polygon[i + 1][1] - 0.5, polygon[i][1] - 0.5))
+            if y_start > y_end:
+                x_end, x_start = x_start, x_end
+                y_end, y_start = y_start, y_end
 
-            sign = 1
-            if polygon[i + 1][1] > polygon[i][1]:
-                sign = -1
+            dy = abs(y_end - y_start)
 
             if dy != 0:
-                dx = sign * (polygon[i + 1][0] - polygon[i][0]) / dy
-                scan_lines_dict[max(polygon[i + 1][1] - 1, polygon[i][1] - 1)].append(Active_Edge(x, dx, dy))
+                dx = -(x_end - x_start) / dy
+                scan_lines_dict[y_end].append(Active_Edge(x_end, dx, dy))
 
-        dy = abs(polygon[0][1] - polygon[-1][1])
+        x_start = polygon[-1][0]
+        x_end = polygon[0][0]
+        y_start = polygon[-1][1]
+        y_end = polygon[0][1]
 
-        if polygon[0][0] - polygon[-1][0] == 0:
-            x = polygon[-1][0]
-        elif dy != 0:
-            x = get_intersection_point(polygon[-1], polygon[0], max(polygon[0][1] - 0.5, polygon[-1][1] - 0.5))
+        if y_start > y_end:
+            x_end, x_start = x_start, x_end
+            y_end, y_start = y_start, y_end
 
-        sign = 1
-        if polygon[0][1] > polygon[-1][1]:
-            sign = -1
+        dy = abs(y_end - y_start)
 
         if dy != 0:
-            dx = sign * (polygon[0][0] - polygon[-1][0]) / dy
-            scan_lines_dict[max(polygon[0][1] - 1, polygon[-1][1] - 1)].append(Active_Edge(x, dx, dy))
+            dx = -(x_end - x_start) / dy
+            scan_lines_dict[y_end].append(Active_Edge(x_end, dx, dy))
 
     return scan_lines_dict
 
 def CAP_algorithm(all_polygons : List, color : QColor, scene : QGraphicsScene, delay=False):
     y_max, y_min = find_max_and_min_scanning_line(all_polygons)
     scan_lines_dict = make_y_groups_list(y_max, y_min, all_polygons)
+
     active_edges_list = []
     current_scan_line = y_max
 
@@ -84,12 +84,13 @@ def CAP_algorithm(all_polygons : List, color : QColor, scene : QGraphicsScene, d
 
         index = 0
 
-        while index < len(active_edges_list):
+        while index < len(active_edges_list) - 1:
             if delay:
                 QApplication.processEvents()
-                time.sleep(0.001)
+                time.sleep(0.0001)
 
-            scene.addLine(floor(active_edges_list[index].x), current_scan_line, floor(active_edges_list[index + 1].x), current_scan_line, pen=QPen(color, 1))
+            scene.addLine(active_edges_list[index].x, current_scan_line, active_edges_list[index + 1].x,
+                            current_scan_line, pen=QPen(color, 1))
             index += 2
 
         index = 0

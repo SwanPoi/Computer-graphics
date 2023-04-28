@@ -156,7 +156,7 @@ class MyWindow(QMainWindow):
         self.draw_scene.addEllipse(point.x(), point.y(), 1, 1, QPen(Qt.black))
 
     def draw_line(self, first_point : QPoint, second_point : QPoint):
-        self.draw_scene.addLine(first_point.x(), first_point.y(), second_point.x(), second_point.y(), pen=QPen(self.line_color))
+        self.draw_scene.addLine(first_point.x(), first_point.y(), second_point.x(), second_point.y(), pen=QPen(self.line_color, 3))
 
     def draw_polygon(self, polygon):
         for i in range(len(polygon) - 1):
@@ -241,6 +241,10 @@ class MyWindow(QMainWindow):
             self.create_message('Для закраски все фигуры должны быть замкнуты.')
             return
 
+        self.without_delay_button.setEnabled(False)
+        self.delay_button.setEnabled(False)
+        self.time_button.setEnabled(False)
+
         self.draw_scene.clear()
         self.draw_all_polygons()
 
@@ -253,6 +257,11 @@ class MyWindow(QMainWindow):
         else:
             CAP_algorithm(self.all_polygons, self.color, self.draw_scene, delay)
 
+        #self.draw_all_polygons()
+
+        self.without_delay_button.setEnabled(True)
+        self.delay_button.setEnabled(True)
+        self.time_button.setEnabled(True)
 
 
 if __name__ == '__main__':
