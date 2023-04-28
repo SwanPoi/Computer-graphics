@@ -54,6 +54,7 @@ class MyWindow(QMainWindow):
         self.line_color = Qt.red
         self.color = Qt.yellow
         self.can_close = 1
+        self.drawn = False
 
         """Таблицы"""
         self.points_table = self.ui.points_tableWidget
@@ -176,35 +177,38 @@ class MyWindow(QMainWindow):
         self.points_table.setItem(self.points_table.rowCount() - 1, 1, QTableWidgetItem(str(second_value)))
 
     def add_point(self, point : QPoint):
-        if len(self.cur_polygon) == 0:
-            self.add_row_to_table('Многоугольник №' + str(len(self.all_polygons) + 1), '')
-            self.points_table.setSpan(self.points_table.rowCount() - 1, 0, 1, 2)
+        if not self.drawn:
+            if len(self.cur_polygon) == 0:
+                self.add_row_to_table('Многоугольник №' + str(len(self.all_polygons) + 1), '')
+                self.points_table.setSpan(self.points_table.rowCount() - 1, 0, 1, 2)
 
-        if [point.x(), point.y()] in self.cur_polygon:
-            self.create_message('Точки в одной и той же фигуре не могут повторяться.')
-            return
+            if [point.x(), point.y()] in self.cur_polygon:
+                self.create_message('Точки в одной и той же фигуре не могут повторяться.')
+                return
 
-        self.cur_polygon.append([point.x(), point.y()])
-        self.add_row_to_table(point.x(), point.y())
-        self.draw_point(point)
+            self.cur_polygon.append([point.x(), point.y()])
+            self.add_row_to_table(point.x(), point.y())
+            self.draw_point(point)
 
-        if len(self.cur_polygon) > 1:
-            self.draw_line(QPoint(self.cur_polygon[-2][0], self.cur_polygon[-2][1]), point)
+            if len(self.cur_polygon) > 1:
+                self.draw_line(QPoint(self.cur_polygon[-2][0], self.cur_polygon[-2][1]), point)
 
     def key_line(self, point : QPoint, axis : int):
-        if axis == 0:
-            self.add_point(QPoint(self.cur_polygon[-1][0], point.y()))
-        elif axis == 1:
-            self.add_point(QPoint(point.x(), self.cur_polygon[-1][1]))
+        if not self.drawn:
+            if axis == 0:
+                self.add_point(QPoint(self.cur_polygon[-1][0], point.y()))
+            elif axis == 1:
+                self.add_point(QPoint(point.x(), self.cur_polygon[-1][1]))
 
     def finish_polygon(self):
-        if len(self.cur_polygon) <= 2:
-            self.create_message('Для замыкания фигура должна содержать хотя бы 3 точки')
-        else:
-            self.draw_line(QPoint(self.cur_polygon[0][0], self.cur_polygon[0][1]),
-                           QPoint(self.cur_polygon[-1][0], self.cur_polygon[-1][1]))
-            self.all_polygons.append(self.cur_polygon)
-            self.cur_polygon = []
+        if not self.drawn:
+            if len(self.cur_polygon) <= 2:
+                self.create_message('Для замыкания фигура должна содержать хотя бы 3 точки')
+            else:
+                self.draw_line(QPoint(self.cur_polygon[0][0], self.cur_polygon[0][1]),
+                               QPoint(self.cur_polygon[-1][0], self.cur_polygon[-1][1]))
+                self.all_polygons.append(self.cur_polygon)
+                self.cur_polygon = []
 
     def get_int(self, text, string):
         '''Ввод из поля'''
@@ -241,8 +245,12 @@ class MyWindow(QMainWindow):
             self.create_message('Для закраски все фигуры должны быть замкнуты.')
             return
 
-        self.without_delay_button.setEnabled(False)
+        self.drawn = True
         self.delay_button.setEnabled(False)
+        self.without_delay_button.setEnabled(False)
+        self.set_color_button.setEnabled(False)
+        self.add_point_button.setEnabled(False)
+        self.close_figure_button.setEnabled(False)
         self.time_button.setEnabled(False)
 
         self.draw_scene.clear()
@@ -257,12 +265,13 @@ class MyWindow(QMainWindow):
         else:
             CAP_algorithm(self.all_polygons, self.color, self.draw_scene, delay)
 
-        #self.draw_all_polygons()
-
-        self.without_delay_button.setEnabled(True)
         self.delay_button.setEnabled(True)
+        self.without_delay_button.setEnabled(True)
+        self.set_color_button.setEnabled(True)
+        self.add_point_button.setEnabled(True)
+        self.close_figure_button.setEnabled(True)
         self.time_button.setEnabled(True)
-
+        self.drawn = False
 
 if __name__ == '__main__':
     """Запуск приложения"""
