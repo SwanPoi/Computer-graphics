@@ -302,6 +302,10 @@ class MyWindow(QMainWindow):
             self.create_message('Отсутствует затравочная точка')
             return
 
+        self.without_delay_button.setEnabled(False)
+        self.delay_button.setEnabled(False)
+        self.time_button.setEnabled(False)
+
         self.draw_scene.clear()
         self.draw_all_polygons()
 
@@ -316,6 +320,9 @@ class MyWindow(QMainWindow):
             lines_seed_filling(self.draw_scene, self.image, QColor(self.line_color), QColor(self.color),
                                self.seed_point[-1], delay)
 
+        self.without_delay_button.setEnabled(True)
+        self.delay_button.setEnabled(True)
+        self.time_button.setEnabled(True)
 
 
 
