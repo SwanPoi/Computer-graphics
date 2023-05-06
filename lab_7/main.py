@@ -6,7 +6,7 @@ from PyQt5.QtCore import Qt, QObject, pyqtSignal, QPoint
 
 from copy import deepcopy
 from brezenham import integer_bresenham
-
+import cut_algorithm as cut
 
 class GraphicScene(QGraphicsScene):
     point_signal = pyqtSignal(QPoint)
@@ -158,7 +158,16 @@ class MyWindow(QMainWindow):
     def lab_message(self):
         msg = QMessageBox()
         msg.setWindowTitle("Информация о программе")
-        msg.setText("")
+        msg.setText("Программа реализует простой алгоритм отсечения отрезка регулярным отсекателем.\n"
+                    "Программа позволяет вводить точки отрезков и отсекатель как сочетанием полей ввода и соответствующей кнопки, "
+                    "так и щелчком левой кнопкой мыши (для отсекателя первый щелчок левой кнопки мыши - добавление угла отсекателя. "
+                    "Второй щелчок левой кнопкой мыши - добавление диагональной вершины, замыкание отсекателя). "
+                    "Для ввода горизонтального отрезка используется сочетание "
+                    "Ctrl+правая кнопка мыши, для ввода вертикального ребра - сочетание Alt+правая кнопка мыши. "
+                    "Отсекатель может быть только один (при построении нового отсекателя предыдущий стирается), "
+                    "отрезков по заданию - не более 10. \n"
+                    "Можно выбирать цвет отрезков, отсекателя и частей отрезков, полученных в результате работы алгоритма "
+                    "(он не может совпадать с цветом изначального отрезка, так как изначальные отрезки не стираются).")
         msg.exec()
 
     def set_line_color(self):
@@ -177,11 +186,6 @@ class MyWindow(QMainWindow):
         '''Выбор цвета'''
         color = QColorDialog.getColor()
 
-        '''
-        if color == self.line_color:
-            self.create_message('Невозможно выбрать цвет затравки, совпадающий с цветом линий')
-            return
-        '''
         if color.isValid():
             self.cutter_color_label.setStyleSheet("background-color: {}".format(color.name()))
             self.cutter_color = color
@@ -202,7 +206,6 @@ class MyWindow(QMainWindow):
         self.image.setPixel(point.x(), point.y(), QColor(color).rgb())
         self.draw_scene.clear()
         self.draw_scene.addPixmap(QPixmap.fromImage(self.image))
-        #self.draw_scene.addEllipse(point.x(), point.y(), 1, 1, QPen(Qt.black))
 
     def draw_line(self, first_point : QPoint, second_point : QPoint, color):
         points = integer_bresenham(first_point.x(), second_point.x(), first_point.y(), second_point.y())
@@ -212,7 +215,6 @@ class MyWindow(QMainWindow):
 
         self.draw_scene.clear()
         self.draw_scene.addPixmap(QPixmap.fromImage(self.image))
-        #self.draw_scene.addLine(first_point.x(), first_point.y(), second_point.x(), second_point.y(), pen=QPen(self.line_color))
 
     def draw_cutter(self, polygon):
         for i in range(len(polygon) - 1):
@@ -232,6 +234,10 @@ class MyWindow(QMainWindow):
         table.setItem(table.rowCount() - 1, 1, QTableWidgetItem(str(second_value)))
 
     def add_point(self, point : QPoint):
+        if len(self.all_segments) == 10:
+            self.create_message('По заданию необходим ввод до 10 отрезков')
+            return
+
         if not self.drawn:
             if len(self.cur_segment) == 0:
                 self.add_row_to_table(self.points_table, 'Отрезок №' + str(len(self.all_segments) + 1), '')
@@ -298,9 +304,6 @@ class MyWindow(QMainWindow):
                 self.cutter.append([point.x(), point.y()])
                 self.cutter.append([right_up_point.x(), right_up_point.y()])
 
-
-
-
     def get_int(self, text, string):
         '''Ввод из поля'''
         result = None
@@ -312,6 +315,10 @@ class MyWindow(QMainWindow):
         return result
 
     def add_point_from_lines(self):
+        if len(self.all_segments) == 10:
+            self.create_message('По заданию необходим ввод до 10 отрезков')
+            return
+
         x = self.get_int(self.x_coordinates_line.text(), 'координата Х точки')
 
         if x is None:
@@ -376,10 +383,6 @@ class MyWindow(QMainWindow):
         self.add_cutter(QPoint(xl, yl))
         self.add_cutter(QPoint(xr, yr))
 
-    def do_cut(self):
-        pass
-
-
     """Очистка всей сцены"""
     def clear_all_scene(self):
         self.draw_scene.clear()
@@ -393,36 +396,46 @@ class MyWindow(QMainWindow):
         self.draw_scene.addPixmap(QPixmap.fromImage(self.image))
 
 
-    def draw_filling(self, delay=False, time_measure=False):
+    def do_cut(self):
         if len(self.all_segments) == 0:
-            self.create_message('Для закраски должна быть добавлена хотя бы одна замкнутая фигура.')
+            self.create_message('Должен быть добавлен хотя бы один отрезок.')
             return
 
-        if len(self.cutter) == 0:
-            self.create_message('Отсутствует затравочная точка')
+        if len(self.cutter) <= 1:
+            self.create_message('Отсутствует отсекатель')
             return
 
         self.drawn = True
-        self.delay_button.setEnabled(False)
-        self.without_delay_button.setEnabled(False)
-        self.set_color_button.setEnabled(False)
         self.add_point_button.setEnabled(False)
-        self.close_figure_button.setEnabled(False)
-        self.time_button.setEnabled(False)
-        self.seed_button.setEnabled(False)
+        self.add_cutter_button.setEnabled(False)
+        self.set_line_color_button.setEnabled(False)
+        self.set_cutter_color_button.setEnabled(False)
+        self.set_cut_color_button.setEnabled(False)
+        self.do_cut_button.setEnabled(False)
 
-        self.draw_scene.clear()
-        self.draw_all_segments()
+        x1, x2 = self.cutter[0][0], self.cutter[2][0]
+        y1, y2 = self.cutter[0][1], self.cutter[2][1]
 
-        pass
+        x_max = max(x1, x2)
+        x_min = min(x1, x2)
+        y_max = max(y1, y2)
+        y_min = min(y1, y2)
 
-        self.delay_button.setEnabled(True)
-        self.without_delay_button.setEnabled(True)
-        self.set_color_button.setEnabled(True)
+        cutter = cut.Cutter(x_l=x_min, x_r=x_max, y_down=y_min, y_up=y_max)
+
+        for segment in self.all_segments:
+            visible_segment = cut.cut_algorithm(segment, cutter)
+
+            if len(visible_segment):
+                self.draw_line(QPoint(int(visible_segment[0][0]), int(visible_segment[0][1])),
+                                   QPoint(int(visible_segment[1][0]), int(visible_segment[1][1])), self.cut_color)
+
         self.add_point_button.setEnabled(True)
-        self.close_figure_button.setEnabled(True)
-        self.time_button.setEnabled(True)
-        self.seed_button.setEnabled(True)
+        self.add_cutter_button.setEnabled(True)
+        self.set_line_color_button.setEnabled(True)
+        self.set_cutter_color_button.setEnabled(True)
+        self.set_cut_color_button.setEnabled(True)
+        self.do_cut_button.setEnabled(True)
         self.drawn = False
 
 
