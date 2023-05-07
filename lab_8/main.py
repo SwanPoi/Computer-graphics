@@ -382,6 +382,7 @@ class MyWindow(QMainWindow):
         self.all_segments = []
         self.cur_segment = []
         self.cutter = []
+        self.is_close = False
         self.points_table.setRowCount(0)
         self.cutter_table.setRowCount(0)
         self.image = QImage(5000, 5000, QImage.Format_ARGB32)
