@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QAction, qAp
 from PyQt5.QtGui import QPen, QBrush, QPixmap, QImage, QColor
 from PyQt5.QtCore import Qt, QObject, pyqtSignal, QPoint
 
-from copy import deepcopy
+import cut_algorithm as cut
 from brezenham import integer_bresenham
 
 class GraphicScene(QGraphicsScene):
@@ -169,14 +169,14 @@ class MyWindow(QMainWindow):
     def lab_message(self):
         msg = QMessageBox()
         msg.setWindowTitle("Информация о программе")
-        msg.setText("Программа реализует простой алгоритм отсечения отрезка регулярным отсекателем.\n"
+        msg.setText("Программа реализует алгоритм Кируса-Бека отсечения отрезка произвольным выпуклого отсекателем.\n"
                     "Программа позволяет вводить точки отрезков и отсекатель как сочетанием полей ввода и соответствующей кнопки, "
-                    "так и щелчком левой кнопкой мыши (для отсекателя первый щелчок левой кнопки мыши - добавление угла отсекателя. "
-                    "Второй щелчок левой кнопкой мыши - добавление диагональной вершины, замыкание отсекателя). "
-                    "Для ввода горизонтального отрезка используется сочетание "
-                    "Ctrl+правая кнопка мыши, для ввода вертикального ребра - сочетание Alt+правая кнопка мыши. "
+                    "так и щелчком левой кнопкой мыши (для отсекателя обычный щелчок левой кнопки мыши - добавление точки отсекателя, "
+                    "щелчок левой кнопкой мыши+Shift - замыкание отсекателя). "
+                    "Для ввода горизонтального отрезка (ребра отсекателя) используется сочетание кнопки мыши с "
+                    "Ctrl, для ввода вертикального ребра - сочетание с Alt. "
                     "Отсекатель может быть только один (при построении нового отсекателя предыдущий стирается), "
-                    "отрезков по заданию - не более 10. \n"
+                    "отрезков по заданию - не более 10. При построении не выпуклого отсекателя, отсекатель стирается\n"
                     "Можно выбирать цвет отрезков, отсекателя и частей отрезков, полученных в результате работы алгоритма "
                     "(он не может совпадать с цветом изначального отрезка, так как изначальные отрезки не стираются).")
         msg.exec()
@@ -306,9 +306,16 @@ class MyWindow(QMainWindow):
                 if len(self.cutter) < 3:
                     self.create_message('Для замыкания отсекателя необходимо минимум 3 точки')
                 else:
-                    self.is_close = True
-                    self.draw_line(QPoint(self.cutter[0][0], self.cutter[0][1]),
-                                       QPoint(self.cutter[-1][0], self.cutter[-1][1]), self.cutter_color)
+                    if cut.check_correct_polygon(self.cutter):
+                        self.is_close = True
+                        self.draw_line(QPoint(self.cutter[0][0], self.cutter[0][1]),
+                                           QPoint(self.cutter[-1][0], self.cutter[-1][1]), self.cutter_color)
+                    else:
+                        self.draw_cutter(self.cutter, Qt.white)
+                        self.create_message('Отсекатель должен быть выпуклым многоугольником')
+                        self.cutter = []
+                        self.cutter_table.setRowCount(0)
+                        self.cutter_table.setSpan(self.cutter_table.rowCount() - 1, 0, 1, 2)
 
     def get_int(self, text, string):
         '''Ввод из поля'''
@@ -369,7 +376,6 @@ class MyWindow(QMainWindow):
     def close_cutter(self):
         self.add_cutter(QPoint(0, 0), 1)
 
-
     """Очистка всей сцены"""
     def clear_all_scene(self):
         self.draw_scene.clear()
@@ -392,6 +398,10 @@ class MyWindow(QMainWindow):
             self.create_message('Отсутствует отсекатель')
             return
 
+        if not self.is_close:
+            self.create_message('Отсекатель не замкнут')
+            return
+
         self.drawn = True
         self.add_point_button.setEnabled(False)
         self.add_cutter_button.setEnabled(False)
@@ -400,20 +410,14 @@ class MyWindow(QMainWindow):
         self.set_cut_color_button.setEnabled(False)
         self.do_cut_button.setEnabled(False)
 
-        x1, x2 = self.cutter[0][0], self.cutter[2][0]
-        y1, y2 = self.cutter[0][1], self.cutter[2][1]
-
-        x_max = max(x1, x2)
-        x_min = min(x1, x2)
-        y_max = max(y1, y2)
-        y_min = min(y1, y2)
-
-
-
         for segment in self.all_segments:
-            pass
+            result = cut.cut_cyrus_beck(self.cutter, segment)
 
-
+            if not (result is None):
+                self.draw_line(QPoint(segment[0][0], segment[0][1]), QPoint(segment[1][0], segment[1][1]), Qt.white)
+                self.draw_line(QPoint(segment[0][0], segment[0][1]), QPoint(result[0][0], result[0][1]), self.line_color)
+                self.draw_line(QPoint(result[1][0], result[1][1]), QPoint(segment[1][0], segment[1][1]), self.line_color)
+                self.draw_line(QPoint(result[0][0], result[0][1]), QPoint(result[1][0], result[1][1]), self.cut_color)
 
         self.add_point_button.setEnabled(True)
         self.add_cutter_button.setEnabled(True)
