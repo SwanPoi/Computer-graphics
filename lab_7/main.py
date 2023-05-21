@@ -428,7 +428,7 @@ class MyWindow(QMainWindow):
 
             if len(visible_segment):
                 self.draw_line(QPoint(int(visible_segment[0][0]), int(visible_segment[0][1])),
-                                   QPoint(int(visible_segment[1][0]), int(visible_segment[1][1])), self.cut_color)
+                               QPoint(int(visible_segment[1][0]), int(visible_segment[1][1])), self.cut_color)
 
         self.add_point_button.setEnabled(True)
         self.add_cutter_button.setEnabled(True)

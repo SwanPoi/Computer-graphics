@@ -14,6 +14,7 @@ class Cutter:
         self.y_up = y_up
         self.y_down = y_down
 
+
 def get_code(point : List, cutter : Cutter):
     code = ''
     x = point[0]
