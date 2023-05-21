@@ -5,73 +5,74 @@ def check_correct_polygon(polygon : List):
     poly = Polygon(*polygon)
     return poly.is_convex()
 
-def get_vector(first_point, second_point):
-    return [second_point[0] - first_point[0], second_point[1] - first_point[1]]
+def sutherland_hodgman(polygon : List, cutter : List):
+    for i in range(len(cutter)):
+        next_i = (i + 1) % len(cutter)
+        polygon = cut_polygon_by_edge([cutter[i], cutter[next_i]], polygon)
+        if len(polygon) < 3:
+            return []
 
-def scalar_mul(first_vector, second_vector):
-    return first_vector[0] * second_vector[0] + first_vector[1] * second_vector[1]
+    return polygon
 
-def get_normal(first_point, second_point, third_point):
-    vector = get_vector(first_point, second_point)
+def cut_polygon_by_edge(segment : List, polygon : List) -> List:
+    new_polygon = []
 
-    if vector[1]:
-        normal = [1, -vector[0] / vector[1]]
-    else:
-        normal = [0, 1]
+    for j in range(1, len(polygon) + 1):
+        cur_point = polygon[j % len(polygon)]
 
-    if scalar_mul(get_vector(second_point, third_point), normal) < 0:
-        normal[0] *= -1
-        normal[1] *= -1
+        if check_intersection([polygon[j - 1], cur_point], segment):
+            new_polygon.append(get_intersection_point(segment[0], segment[1], polygon[j - 1], cur_point))
 
-    return normal
+        if is_visible(segment, cur_point) <= 0:
+            new_polygon.append(cur_point)
 
-def cut_cyrus_beck(cutter, segment):
-    t_beg = 0
-    t_end = 1
+    return new_polygon
 
-    first_point = segment[0]
-    second_point = segment[1]
+def check_intersection(vector : List, cutter_side : List):
+    first_visible = is_visible(cutter_side, vector[0])
+    second_visible = is_visible(cutter_side, vector[1])
 
-    d = get_vector(first_point, second_point)
+    return first_visible * second_visible < 0
 
-    for i in range(-2, len(cutter) - 2):
-        normal = get_normal(cutter[i], cutter[i + 1], cutter[i + 2])
+def is_visible(side_cutter : List, point : List):
+    vector = [side_cutter[1][0] - side_cutter[0][0], side_cutter[1][1] - side_cutter[0][1]]
+    vec_point = [point[0] - side_cutter[0][0], point[1] - side_cutter[0][1]]
+    result = vec_point[0] * vector[1] - vec_point[1] * vector[0]
 
-        w = get_vector(cutter[i], first_point)
-        d_scalar = scalar_mul(d, normal)
-        w_scalar = scalar_mul(w, normal)
+    if abs(result) < 1e-7:
+        result = 0
 
-        if d_scalar == 0:
-            if w_scalar < 0:
-                return None
-            else:
-                continue
+    return sign(result)
 
-        t = - w_scalar / d_scalar
+def sign(number):
+    result = 0
 
-        if d_scalar > 0:
-            if t <= 1:
-                t_beg = max(t, t_beg)
-            else:
-                return None
-        elif d_scalar < 0:
-            if t >= 0:
-                t_end = min(t, t_end)
-            else:
-                return None
+    if number > 0:
+        result = 1
+    elif number < 1:
+        result = -1
 
-        if t_beg > t_end:
-            return None
+    return result
 
-    if t_beg <= t_end:
-        first_result = [round(first_point[0] + d[0] * t_beg), round(first_point[1] + d[1] * t_beg)]
-        second_result = [round(first_point[0] + d[0] * t_end), round(first_point[1] + d[1] * t_end)]
+def get_intersection_point(p1, p2, w1, w2):
+    a11 = p2[0] - p1[0]
+    a21 = p2[1] - p1[1]
+    a12 = w1[0] - w2[0]
+    a22 = w1[1] - w2[1]
 
-        return first_result, second_result
+    r1 = w1[0] - p1[0]
+    r2 = w1[1] - p1[1]
 
-    return None
+    d = a11 * a22 - a12 * a21
 
+    A11 = a22 / d
+    A12 = -a12 / d
 
+    t = A11 * r1 + A12 * r2
 
+    x = p1[0] + (p2[0] - p1[0]) * t
+    y = p1[1] + (p2[1] - p1[1]) * t
+
+    return [round(x), round(y)]
 
 

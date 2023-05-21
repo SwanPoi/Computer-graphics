@@ -62,6 +62,7 @@ class MyWindow(QMainWindow):
         """Координаты точек"""
         self.cur_polygon = []
         self.cutter = []
+        self.new_polygon = []
         self.is_close = False
         self.is_polygon_close = False
 
@@ -146,6 +147,8 @@ class MyWindow(QMainWindow):
         self.set_cutter_color_button = self.ui.color_cut_pushButton
         self.set_cut_color_button = self.ui.color_final_pushButton
 
+        self.close_figure_button.hide()
+
         """Привязка действий к нажатию кнопок"""
         self.add_point_button.clicked.connect(self.add_point_from_lines)
         self.add_cutter_button.clicked.connect(self.add_cutter_from_lines)
@@ -171,16 +174,16 @@ class MyWindow(QMainWindow):
     def lab_message(self):
         msg = QMessageBox()
         msg.setWindowTitle("Информация о программе")
-        msg.setText("Программа реализует алгоритм Кируса-Бека отсечения отрезка произвольным выпуклого отсекателем.\n"
-                    "Программа позволяет вводить точки отрезков и отсекатель как сочетанием полей ввода и соответствующей кнопки, "
-                    "так и щелчком левой кнопкой мыши (для отсекателя обычный щелчок левой кнопки мыши - добавление точки отсекателя, "
-                    "щелчок левой кнопкой мыши+Shift - замыкание отсекателя). "
-                    "Для ввода горизонтального отрезка (ребра отсекателя) используется сочетание кнопки мыши с "
+        msg.setText("Программа реализует алгоритм Сазерленда-Ходжмена отсечения многоугольника произвольным выпуклым отсекателем.\n"
+                    "Программа позволяет вводить точки многоугольника и отсекателя как сочетанием полей ввода и соответствующей кнопки, "
+                    "так и щелчком левой кнопкой мыши для добавления точки отсекателя, правой кнопкой мыши - для многоугольника."
+                    "Сочетание соответствующей клавиши мыши и Shift позволяет замкнуть фигуру. "
+                    "Для ввода горизонтального ребра используется сочетание кнопки мыши с "
                     "Ctrl, для ввода вертикального ребра - сочетание с Alt. "
-                    "Отсекатель может быть только один (при построении нового отсекателя предыдущий стирается), "
-                    "отрезков по заданию - не более 10. При построении не выпуклого отсекателя, отсекатель стирается\n"
-                    "Можно выбирать цвет отрезков, отсекателя и частей отрезков, полученных в результате работы алгоритма "
-                    "(он не может совпадать с цветом изначального отрезка, так как изначальные отрезки не стираются).")
+                    "Отсекатель может быть только один (при построении нового отсекателя предыдущий стирается)"
+                    ". При построении не выпуклого отсекателя, отсекатель стирается. С многоугольником ситуация аналогична.\n"
+                    "Можно выбирать цвет многоугольника, отсекателя и многоугольника, полученного в результате работы алгоритма "
+                    "(он не может совпадать с цветом изначального многоугольника, так как изначальный многоугольник не стирается).")
         msg.exec()
 
     def set_line_color(self):
@@ -230,12 +233,13 @@ class MyWindow(QMainWindow):
         self.draw_scene.addPixmap(QPixmap.fromImage(self.image))
 
     def draw_polygon(self, polygon, color):
-        for i in range(len(polygon) - 1):
-            self.draw_point(QPoint(polygon[i][0], polygon[i][1]), color)
-            self.draw_line(QPoint(polygon[i][0], polygon[i][1]), QPoint(polygon[i + 1][0], polygon[i + 1][1]), color)
+        if len(polygon) > 1:
+            for i in range(len(polygon) - 1):
+                self.draw_point(QPoint(polygon[i][0], polygon[i][1]), color)
+                self.draw_line(QPoint(polygon[i][0], polygon[i][1]), QPoint(polygon[i + 1][0], polygon[i + 1][1]), color)
 
-        self.draw_point(QPoint(polygon[-1][0], polygon[-1][1]), color)
-        self.draw_line(QPoint(polygon[0][0], polygon[0][1]), QPoint(polygon[-1][0], polygon[-1][1]), color)
+            self.draw_point(QPoint(polygon[-1][0], polygon[-1][1]), color)
+            self.draw_line(QPoint(polygon[0][0], polygon[0][1]), QPoint(polygon[-1][0], polygon[-1][1]), color)
 
     def draw_all_segments(self):
         for segment in self.cur_polygon:
@@ -249,7 +253,9 @@ class MyWindow(QMainWindow):
     def add_polygon(self, point : QPoint, func):
         if not self.drawn:
             if self.is_polygon_close == True:
+                self.draw_polygon(self.new_polygon, Qt.white)
                 self.draw_polygon(self.cur_polygon, Qt.white)
+                self.draw_polygon(self.cutter, self.cutter_color)
                 self.cur_polygon = []
                 self.points_table.setRowCount(0)
                 self.points_table.setSpan(self.points_table.rowCount() - 1, 0, 1, 2)
@@ -268,17 +274,22 @@ class MyWindow(QMainWindow):
                 if len(self.cur_polygon) < 3:
                     self.create_message('Для замыкания многоугольника необходимо минимум 3 точки')
                 else:
+                    self.is_polygon_close = True
+                    self.draw_line(QPoint(self.cur_polygon[0][0], self.cur_polygon[0][1]),
+                                   QPoint(self.cur_polygon[-1][0], self.cur_polygon[-1][1]), self.line_color)
+                    """
                     if cut.check_correct_polygon(self.cur_polygon):
                         self.is_polygon_close = True
                         self.draw_line(QPoint(self.cur_polygon[0][0], self.cur_polygon[0][1]),
                                        QPoint(self.cur_polygon[-1][0], self.cur_polygon[-1][1]), self.line_color)
                     else:
                         self.draw_polygon(self.cur_polygon, Qt.white)
+                        self.draw_polygon(self.cutter, self.cutter_color)
                         self.create_message('Отсекатель должен быть выпуклым многоугольником')
                         self.cur_polygon = []
                         self.points_table.setRowCount(0)
                         self.points_table.setSpan(self.points_table.rowCount() - 1, 0, 1, 2)
-
+                    """
     def key_line(self, point : QPoint, axis : int, func : int):
         if not self.drawn:
             if func == 0:
@@ -299,7 +310,9 @@ class MyWindow(QMainWindow):
     def add_cutter(self, point : QPoint, func=0):
         if not self.drawn:
             if self.is_close == True:
+                self.draw_polygon(self.new_polygon, Qt.white)
                 self.draw_polygon(self.cutter, Qt.white)
+                self.draw_polygon(self.cur_polygon, self.line_color)
                 self.cutter = []
                 self.cutter_table.setRowCount(0)
                 self.cutter_table.setSpan(self.cutter_table.rowCount() - 1, 0, 1, 2)
@@ -324,6 +337,7 @@ class MyWindow(QMainWindow):
                                            QPoint(self.cutter[-1][0], self.cutter[-1][1]), self.cutter_color)
                     else:
                         self.draw_polygon(self.cutter, Qt.white)
+                        self.draw_polygon(self.cur_polygon, self.line_color)
                         self.create_message('Отсекатель должен быть выпуклым многоугольником')
                         self.cutter = []
                         self.cutter_table.setRowCount(0)
@@ -340,10 +354,6 @@ class MyWindow(QMainWindow):
         return result
 
     def add_point_from_lines(self):
-        if len(self.cur_polygon) == 10:
-            self.create_message('По заданию необходим ввод до 10 отрезков')
-            return
-
         x = self.get_int(self.x_coordinates_line.text(), 'координата Х точки')
 
         if x is None:
@@ -362,7 +372,7 @@ class MyWindow(QMainWindow):
             self.create_message(f'Координата y может быть в диапазоне {0, self.image.height()}')
             return
 
-        self.add_polygon(QPoint(x, y))
+        self.add_polygon(QPoint(x, y), 0)
 
     def add_cutter_from_lines(self):
         xl = self.get_int(self.x_left_line.text(), 'координата Х точки отсекателя')
@@ -394,6 +404,7 @@ class MyWindow(QMainWindow):
         self.cur_polygon = []
         self.cutter = []
         self.is_close = False
+        self.is_polygon_close = False
         self.points_table.setRowCount(0)
         self.cutter_table.setRowCount(0)
         self.image = QImage(5000, 5000, QImage.Format_ARGB32)
@@ -426,14 +437,10 @@ class MyWindow(QMainWindow):
         self.set_cut_color_button.setEnabled(False)
         self.do_cut_button.setEnabled(False)
 
-        for segment in self.cur_polygon:
-            result = cut.cut_cyrus_beck(self.cutter, segment)
+        self.new_polygon = cut.sutherland_hodgman(self.cur_polygon, self.cutter)
 
-            if not (result is None):
-                self.draw_line(QPoint(segment[0][0], segment[0][1]), QPoint(segment[1][0], segment[1][1]), Qt.white)
-                self.draw_line(QPoint(segment[0][0], segment[0][1]), QPoint(result[0][0], result[0][1]), self.line_color)
-                self.draw_line(QPoint(result[1][0], result[1][1]), QPoint(segment[1][0], segment[1][1]), self.line_color)
-                self.draw_line(QPoint(result[0][0], result[0][1]), QPoint(result[1][0], result[1][1]), self.cut_color)
+        if self.new_polygon:
+            self.draw_polygon(self.new_polygon, self.cut_color)
 
         self.add_point_button.setEnabled(True)
         self.add_cutter_button.setEnabled(True)
