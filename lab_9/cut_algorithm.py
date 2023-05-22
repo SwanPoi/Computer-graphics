@@ -3,7 +3,13 @@ from typing import List
 
 def check_correct_polygon(polygon : List):
     poly = Polygon(*polygon)
+    if poly.is_convex():
+        if is_visible([polygon[0], polygon[1]], polygon[2]) > 0:
+            polygon.reverse()
+
     return poly.is_convex()
+
+
 
 def sutherland_hodgman(polygon : List, cutter : List):
     for i in range(len(cutter)):

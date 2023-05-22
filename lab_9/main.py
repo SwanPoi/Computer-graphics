@@ -106,6 +106,14 @@ class MyWindow(QMainWindow):
         clear.triggered.connect(self.clear_all_scene)
         self.clear.addAction(clear)
 
+        '''clear_cutter = QAction("Удалить отсекатель", self)
+        clear_cutter.triggered.connect(self.delete_cutter)
+        self.clear.addAction(clear_cutter)
+
+        clear_poly = QAction("Удалить многоугольник", self)
+        clear_poly.triggered.connect(self.delete_polygon)
+        self.clear.addAction(clear_poly)'''
+
         """Вывод информации об авторе"""
         self.author_info = self.ui.author_menu
         author_info = QAction("Информация об авторе", self)
@@ -238,6 +246,7 @@ class MyWindow(QMainWindow):
                 self.draw_point(QPoint(polygon[i][0], polygon[i][1]), color)
                 self.draw_line(QPoint(polygon[i][0], polygon[i][1]), QPoint(polygon[i + 1][0], polygon[i + 1][1]), color)
 
+            #if color == self.line_color and self.is_polygon_close or color == self.cutter_color and self.is_close:
             self.draw_point(QPoint(polygon[-1][0], polygon[-1][1]), color)
             self.draw_line(QPoint(polygon[0][0], polygon[0][1]), QPoint(polygon[-1][0], polygon[-1][1]), color)
 
@@ -277,19 +286,19 @@ class MyWindow(QMainWindow):
                     self.is_polygon_close = True
                     self.draw_line(QPoint(self.cur_polygon[0][0], self.cur_polygon[0][1]),
                                    QPoint(self.cur_polygon[-1][0], self.cur_polygon[-1][1]), self.line_color)
-                    """
-                    if cut.check_correct_polygon(self.cur_polygon):
+
+                    """if cut.check_correct_polygon(self.cur_polygon):
                         self.is_polygon_close = True
                         self.draw_line(QPoint(self.cur_polygon[0][0], self.cur_polygon[0][1]),
                                        QPoint(self.cur_polygon[-1][0], self.cur_polygon[-1][1]), self.line_color)
                     else:
                         self.draw_polygon(self.cur_polygon, Qt.white)
                         self.draw_polygon(self.cutter, self.cutter_color)
-                        self.create_message('Отсекатель должен быть выпуклым многоугольником')
+                        self.create_message('Многоугольник должен быть выпуклым многоугольником')
                         self.cur_polygon = []
                         self.points_table.setRowCount(0)
-                        self.points_table.setSpan(self.points_table.rowCount() - 1, 0, 1, 2)
-                    """
+                        self.points_table.setSpan(self.points_table.rowCount() - 1, 0, 1, 2)"""
+
     def key_line(self, point : QPoint, axis : int, func : int):
         if not self.drawn:
             if func == 0:
@@ -397,6 +406,20 @@ class MyWindow(QMainWindow):
 
     def close_cutter(self):
         self.add_cutter(QPoint(0, 0), 1)
+
+    def delete_cutter(self):
+        self.draw_polygon(self.cutter, Qt.white)
+        self.draw_polygon(self.cur_polygon, self.line_color)
+        self.cutter_table.setRowCount(0)
+        self.cutter = []
+        self.is_close = False
+
+    def delete_polygon(self):
+        self.draw_polygon(self.cur_polygon, Qt.white)
+        self.draw_polygon(self.cutter, self.cutter_color)
+        self.points_table.setRowCount(0)
+        self.cur_polygon = []
+        self.is_polygon_close = False
 
     """Очистка всей сцены"""
     def clear_all_scene(self):
