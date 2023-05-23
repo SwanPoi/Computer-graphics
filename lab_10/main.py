@@ -10,7 +10,7 @@ from PyQt5.QtCore import Qt, QObject, pyqtSignal, QPoint
 import numpy as np
 
 from functions import function1, function2, function3
-from brezenham import integer_bresenham
+from algorithm import hidden_line
 
 class MyWindow(QMainWindow):
     def __init__(self):
@@ -24,9 +24,8 @@ class MyWindow(QMainWindow):
         self.draw_scene = QGraphicsScene()
         self.draw_view.setScene(self.draw_scene)
 
-        self.image = self.draw_view.image
-        self.image.fill(Qt.white)
-        self.draw_scene.addPixmap(QPixmap.fromImage(self.image))
+        self.draw_scene.addLine(-100, -100, -90, -90, Qt.white)
+        self.draw_scene.addLine(0, 0, 100, 100, Qt.white)
 
         self.pen = QPen()
         self.color = QColor(Qt.red)
@@ -74,6 +73,19 @@ class MyWindow(QMainWindow):
         self.rotate_y_line = self.ui.entry_rotate_oy
         self.rotate_z_line = self.ui.entry_rotate_oz
 
+        self.start_x_line.setText('-10')
+        self.end_x_line.setText('10')
+        self.step_x_line.setText('0.1')
+
+        self.start_z_line.setText('-10')
+        self.end_z_line.setText('10')
+        self.step_z_line.setText('0.1')
+
+        self.scale_line.setText('1')
+        self.rotate_x_line.setText('0')
+        self.rotate_y_line.setText('0')
+        self.rotate_z_line.setText('0')
+
         """Кнопки"""
         self.rotate_button = self.ui.b_rotate
         self.scale_button = self.ui.b_scale
@@ -83,7 +95,7 @@ class MyWindow(QMainWindow):
         """Привязка действий к нажатию кнопок"""
         self.rotate_button.clicked.connect(self.user_rotate)
         self.scale_button.clicked.connect(self.user_scale)
-        #self.draw_button.clicked.connect()
+        self.draw_button.clicked.connect(self.calculate)
         self.clear_button.clicked.connect(self.clear_all_scene)
 
     """Создание оповещения"""
@@ -102,31 +114,13 @@ class MyWindow(QMainWindow):
     def lab_message(self):
         msg = QMessageBox()
         msg.setWindowTitle("Информация о программе")
-        msg.setText("")
+        msg.setText("Программа реализует алгоритм плавающего горизонта. Предоставляется возможность выбора функции поверхности, "
+                    "углов поворота, коэффициента масштабирования, диапазона значений по оси Х и Z.")
         msg.exec()
-
-    def draw_point(self, point : QPoint, color):
-        '''Рисование точки'''
-        self.image.setPixel(point.x(), point.y(), color.rgb())
-        self.draw_scene.clear()
-        self.draw_scene.addPixmap(QPixmap.fromImage(self.image))
-
-    def draw_line(self, first_point : QPoint, second_point : QPoint, color):
-        '''Рисование линии'''
-        points = integer_bresenham(first_point.x(), second_point.x(), first_point.y(), second_point.y())
-
-        for point in points:
-            self.image.setPixel(point.x(), point.y(), color.rgb())
-
-        self.draw_scene.clear()
-        self.draw_scene.addPixmap(QPixmap.fromImage(self.image))
 
     def clear_all_scene(self):
         """Очистка всей сцены"""
         self.draw_scene.clear()
-        self.image = QImage(5000, 5000, QImage.Format_ARGB32)
-        self.image.fill(Qt.white)
-        self.draw_scene.addPixmap(QPixmap.fromImage(self.image))
         self.transform_function_rotate = self.pass_func
         self.transform_function_scale = self.pass_func
         self.angles = [0, 0, 0]
@@ -174,7 +168,7 @@ class MyWindow(QMainWindow):
     def rotate(self, angle_x, angle_y, angle_z, point: QVector3D) -> QVector3D:
         point = self.rotate_x(point, angle_x)
         point = self.rotate_y(point, angle_y)
-        point = self.rotate_y(point, angle_z)
+        point = self.rotate_z(point, angle_z)
         return point
 
     def scale(self, a, point: QVector3D) -> QVector3D:
@@ -191,8 +185,22 @@ class MyWindow(QMainWindow):
 
     def user_rotate(self):
         try:
-            arr = [float(self.entry_rotate_ox.text()), float(self.entry_rotate_oy.text()),
-                   float(self.entry_rotate_oz.text())]
+            if len(''.join(self.rotate_x_line.text().split())) == 0:
+                x = 0
+            else:
+                x = float(self.rotate_x_line.text())
+
+            if len(''.join(self.rotate_y_line.text().split())) == 0:
+                y = 0
+            else:
+                y = float(self.rotate_y_line.text())
+
+            if len(''.join(self.rotate_z_line.text().split())) == 0:
+                z = 0
+            else:
+                z = float(self.rotate_z_line.text())
+
+            arr = [x, y, z]
         except Exception:
             self.create_message("Некорректный ввод углов поворота")
         else:
@@ -202,7 +210,10 @@ class MyWindow(QMainWindow):
 
     def user_scale(self):
         try:
-            s = float(self.entry_scale_oy.text())
+            if len(''.join(self.scale_line.text().split())) == 0:
+                s = 1
+            else:
+                s = float(self.scale_line.text())
             assert (s != 0)
         except Exception:
             self.create_message("Некорректный ввод коэффициента масштабирования")
@@ -220,12 +231,12 @@ class MyWindow(QMainWindow):
         else:
             try:
                 self.get_function()
-                self.scene.clear()
-                #alg = hidden_line(self.scene, self.choosen_func, self.x_range, self.z_range, self.complete)
-                #alg.drawFloatingHorizon()
+                self.draw_scene.clear()
+                alg = hidden_line(self.draw_scene, self.choosen_func, self.x_range, self.z_range, self.complete)
+                alg.drawFloatingHorizon()
                 # self.scene.clear()
                 # self.scene.addPixmap(QPixmap.fromImage(self.image))
-                self.scene.update()
+                self.draw_scene.update()
             except Exception as e:
                 print(traceback.format_exc())
 
