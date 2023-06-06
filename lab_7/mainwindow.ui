@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>927</width>
+    <height>728</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout_2">
+    <item row="0" column="0">
+     <widget class="QGroupBox" name="groupBox">
+      <property name="maximumSize">
+       <size>
+        <width>300</width>
+        <height>167000</height>
+       </size>
+      </property>
+      <property name="title">
+       <string/>
+      </property>
+      <layout class="QGridLayout" name="gridLayout">
+       <item row="0" column="0" colspan="4">
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>Введенные отрезки</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="4" colspan="2">
+        <widget class="QLabel" name="label_3">
+         <property name="text">
+          <string>Введенный отсекатель</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0" colspan="4">
+        <widget class="QTableWidget" name="points_tableWidget"/>
+       </item>
+       <item row="1" column="4" colspan="2">
+        <widget class="QTableWidget" name="cut_tableWidget"/>
+       </item>
+       <item row="2" column="0" colspan="6">
+        <widget class="QLabel" name="label_2">
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;ЛКМ №1 - левая верхняя точка отсекателя&lt;/p&gt;&lt;p&gt;ЛКМ №2 - правая нижняя точка отсекателя&lt;/p&gt;&lt;p&gt;ПКМ - добавление точки отрезка&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="x_label">
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;X:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1" colspan="2">
+        <widget class="QLineEdit" name="x_lineEdit"/>
+       </item>
+       <item row="3" column="3">
+        <widget class="QLabel" name="y_label">
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Y:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="4" colspan="2">
+        <widget class="QLineEdit" name="y_lineEdit"/>
+       </item>
+       <item row="4" column="0" colspan="6">
+        <widget class="QPushButton" name="add_point_pushButton">
+         <property name="text">
+          <string>Добавить точку отрезка</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0" colspan="2">
+        <widget class="QLabel" name="xl_label">
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Xлв:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="2" colspan="2">
+        <widget class="QLineEdit" name="x_left_lineEdit"/>
+       </item>
+       <item row="5" column="4">
+        <widget class="QLabel" name="yl_label">
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Yлв:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="5">
+        <widget class="QLineEdit" name="y_left_lineEdit"/>
+       </item>
+       <item row="6" column="0" colspan="2">
+        <widget class="QLabel" name="xr_label">
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Xпн:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="2" colspan="2">
+        <widget class="QLineEdit" name="x_right_lineEdit"/>
+       </item>
+       <item row="6" column="4">
+        <widget class="QLabel" name="yr_label">
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Yпн:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="5">
+        <widget class="QLineEdit" name="y_right_lineEdit"/>
+       </item>
+       <item row="7" column="0" colspan="6">
+        <widget class="QPushButton" name="add_cut_pushButton">
+         <property name="text">
+          <string>Добавить отсекатель</string>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="0" colspan="6">
+        <widget class="QPushButton" name="final_cut_pushButton">
+         <property name="text">
+          <string>Замкнуть фигуру</string>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="0" colspan="4">
+        <widget class="QPushButton" name="color_cut_pushButton">
+         <property name="text">
+          <string>Цвет отсекателя</string>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="4" colspan="2">
+        <widget class="QLabel" name="color_cut_label">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="10" column="0" colspan="4">
+        <widget class="QPushButton" name="color_segment_pushButton">
+         <property name="text">
+          <string>Цвет отрезков</string>
+         </property>
+        </widget>
+       </item>
+       <item row="10" column="4" colspan="2">
+        <widget class="QLabel" name="color_segment_label">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="0" colspan="4">
+        <widget class="QPushButton" name="color_final_pushButton">
+         <property name="text">
+          <string>Цвет отсеченного</string>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="4" colspan="2">
+        <widget class="QLabel" name="color_final_label">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="12" column="0" colspan="6">
+        <widget class="QPushButton" name="cut_pushButton">
+         <property name="text">
+          <string>Произвести отсечение</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item row="0" column="1">
+     <widget class="QGraphicsView" name="graphicsView">
+      <property name="maximumSize">
+       <size>
+        <width>1677000</width>
+        <height>1677000</height>
+       </size>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>927</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="program_menu">
+    <property name="title">
+     <string>О программе</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="author_menu">
+    <property name="title">
+     <string>Об авторе</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="clear_menu">
+    <property name="title">
+     <string>Очистка</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="exit_menu">
+    <property name="title">
+     <string>Выход</string>
+    </property>
+   </widget>
+   <addaction name="program_menu"/>
+   <addaction name="author_menu"/>
+   <addaction name="clear_menu"/>
+   <addaction name="exit_menu"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
