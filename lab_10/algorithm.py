@@ -98,7 +98,7 @@ class hidden_line:
         highHorizon[xInd] = max(y, highHorizon[xInd])
         lowHorizon[xInd] = min(y, lowHorizon[xInd])
         #self.drawPixmapPoint(QPoint(x, y), QColor(Qt.red))
-        self.canvas.addLine(x, y, x, y, Qt.blue)
+        self.canvas.addLine(x, y, x, y, Qt.red)
 
     def _inCanvas(self, x: float, y: float) -> bool:
         return self.left <= x <= self.right and self.top >= y >= self.bottom
